@@ -13,6 +13,7 @@ import { MaintenanceAPI } from "./classes/maintenance";
 import { ProductAPI } from "./classes/product";
 import { TemplatesApi } from "./classes/templates";
 import { BackupsAPI } from "./classes/backups";
+import { ViewsApi } from "./classes/views";
 import type { Requests } from "~~/lib/requests";
 
 export class UserClient extends BaseAPI {
@@ -28,6 +29,7 @@ export class UserClient extends BaseAPI {
   assets: AssetsApi;
   reports: ReportsAPI;
   notifiers: NotifiersAPI;
+  views: ViewsApi;
   products: ProductAPI;
   backups: BackupsAPI;
 
@@ -56,6 +58,7 @@ export class UserClient extends BaseAPI {
     this.assets = new AssetsApi(requests);
     this.reports = new ReportsAPI(requests);
     this.notifiers = new NotifiersAPI(requests);
+    this.views = new ViewsApi(requests);
     this.products = new ProductAPI(requests);
     this.backups = new BackupsAPI(requests);
 

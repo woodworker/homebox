@@ -20,6 +20,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityfield"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytemplate"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytype"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityview"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/export"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/groupinvitationtoken"
@@ -31,6 +32,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/templatefield"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/user"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/usergroup"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/types"
 )
 
 const (
@@ -50,6 +52,7 @@ const (
 	TypeEntityField          = "EntityField"
 	TypeEntityTemplate       = "EntityTemplate"
 	TypeEntityType           = "EntityType"
+	TypeEntityView           = "EntityView"
 	TypeExport               = "Export"
 	TypeGroup                = "Group"
 	TypeGroupInvitationToken = "GroupInvitationToken"
@@ -8708,6 +8711,684 @@ func (m *EntityTypeMutation) ResetEdge(name string) error {
 	return fmt.Errorf("unknown EntityType edge %s", name)
 }
 
+// EntityViewMutation represents an operation that mutates the EntityView nodes in the graph.
+type EntityViewMutation struct {
+	config
+	op            Op
+	typ           string
+	id            *uuid.UUID
+	created_at    *time.Time
+	updated_at    *time.Time
+	name          *string
+	kind          *entityview.Kind
+	table_config  **types.TableViewConfig
+	clearedFields map[string]struct{}
+	group         *uuid.UUID
+	clearedgroup  bool
+	done          bool
+	oldValue      func(context.Context) (*EntityView, error)
+	predicates    []predicate.EntityView
+}
+
+var _ ent.Mutation = (*EntityViewMutation)(nil)
+
+// entityviewOption allows management of the mutation configuration using functional options.
+type entityviewOption func(*EntityViewMutation)
+
+// newEntityViewMutation creates new mutation for the EntityView entity.
+func newEntityViewMutation(c config, op Op, opts ...entityviewOption) *EntityViewMutation {
+	m := &EntityViewMutation{
+		config:        c,
+		op:            op,
+		typ:           TypeEntityView,
+		clearedFields: make(map[string]struct{}),
+	}
+	for _, opt := range opts {
+		opt(m)
+	}
+	return m
+}
+
+// withEntityViewID sets the ID field of the mutation.
+func withEntityViewID(id uuid.UUID) entityviewOption {
+	return func(m *EntityViewMutation) {
+		var (
+			err   error
+			once  sync.Once
+			value *EntityView
+		)
+		m.oldValue = func(ctx context.Context) (*EntityView, error) {
+			once.Do(func() {
+				if m.done {
+					err = errors.New("querying old values post mutation is not allowed")
+				} else {
+					value, err = m.Client().EntityView.Get(ctx, id)
+				}
+			})
+			return value, err
+		}
+		m.id = &id
+	}
+}
+
+// withEntityView sets the old EntityView of the mutation.
+func withEntityView(node *EntityView) entityviewOption {
+	return func(m *EntityViewMutation) {
+		m.oldValue = func(context.Context) (*EntityView, error) {
+			return node, nil
+		}
+		m.id = &node.ID
+	}
+}
+
+// Client returns a new `ent.Client` from the mutation. If the mutation was
+// executed in a transaction (ent.Tx), a transactional client is returned.
+func (m EntityViewMutation) Client() *Client {
+	client := &Client{config: m.config}
+	client.init()
+	return client
+}
+
+// Tx returns an `ent.Tx` for mutations that were executed in transactions;
+// it returns an error otherwise.
+func (m EntityViewMutation) Tx() (*Tx, error) {
+	if _, ok := m.driver.(*txDriver); !ok {
+		return nil, errors.New("ent: mutation is not running in a transaction")
+	}
+	tx := &Tx{config: m.config}
+	tx.init()
+	return tx, nil
+}
+
+// SetID sets the value of the id field. Note that this
+// operation is only accepted on creation of EntityView entities.
+func (m *EntityViewMutation) SetID(id uuid.UUID) {
+	m.id = &id
+}
+
+// ID returns the ID value in the mutation. Note that the ID is only available
+// if it was provided to the builder or after it was returned from the database.
+func (m *EntityViewMutation) ID() (id uuid.UUID, exists bool) {
+	if m.id == nil {
+		return
+	}
+	return *m.id, true
+}
+
+// IDs queries the database and returns the entity ids that match the mutation's predicate.
+// That means, if the mutation is applied within a transaction with an isolation level such
+// as sql.LevelSerializable, the returned ids match the ids of the rows that will be updated
+// or updated by the mutation.
+func (m *EntityViewMutation) IDs(ctx context.Context) ([]uuid.UUID, error) {
+	switch {
+	case m.op.Is(OpUpdateOne | OpDeleteOne):
+		id, exists := m.ID()
+		if exists {
+			return []uuid.UUID{id}, nil
+		}
+		fallthrough
+	case m.op.Is(OpUpdate | OpDelete):
+		return m.Client().EntityView.Query().Where(m.predicates...).IDs(ctx)
+	default:
+		return nil, fmt.Errorf("IDs is not allowed on %s operations", m.op)
+	}
+}
+
+// SetCreatedAt sets the "created_at" field.
+func (m *EntityViewMutation) SetCreatedAt(t time.Time) {
+	m.created_at = &t
+}
+
+// CreatedAt returns the value of the "created_at" field in the mutation.
+func (m *EntityViewMutation) CreatedAt() (r time.Time, exists bool) {
+	v := m.created_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldCreatedAt returns the old "created_at" field's value of the EntityView entity.
+// If the EntityView object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityViewMutation) OldCreatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldCreatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldCreatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldCreatedAt: %w", err)
+	}
+	return oldValue.CreatedAt, nil
+}
+
+// ResetCreatedAt resets all changes to the "created_at" field.
+func (m *EntityViewMutation) ResetCreatedAt() {
+	m.created_at = nil
+}
+
+// SetUpdatedAt sets the "updated_at" field.
+func (m *EntityViewMutation) SetUpdatedAt(t time.Time) {
+	m.updated_at = &t
+}
+
+// UpdatedAt returns the value of the "updated_at" field in the mutation.
+func (m *EntityViewMutation) UpdatedAt() (r time.Time, exists bool) {
+	v := m.updated_at
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldUpdatedAt returns the old "updated_at" field's value of the EntityView entity.
+// If the EntityView object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityViewMutation) OldUpdatedAt(ctx context.Context) (v time.Time, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldUpdatedAt is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldUpdatedAt requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldUpdatedAt: %w", err)
+	}
+	return oldValue.UpdatedAt, nil
+}
+
+// ResetUpdatedAt resets all changes to the "updated_at" field.
+func (m *EntityViewMutation) ResetUpdatedAt() {
+	m.updated_at = nil
+}
+
+// SetGroupID sets the "group_id" field.
+func (m *EntityViewMutation) SetGroupID(u uuid.UUID) {
+	m.group = &u
+}
+
+// GroupID returns the value of the "group_id" field in the mutation.
+func (m *EntityViewMutation) GroupID() (r uuid.UUID, exists bool) {
+	v := m.group
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldGroupID returns the old "group_id" field's value of the EntityView entity.
+// If the EntityView object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityViewMutation) OldGroupID(ctx context.Context) (v uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldGroupID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldGroupID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldGroupID: %w", err)
+	}
+	return oldValue.GroupID, nil
+}
+
+// ResetGroupID resets all changes to the "group_id" field.
+func (m *EntityViewMutation) ResetGroupID() {
+	m.group = nil
+}
+
+// SetName sets the "name" field.
+func (m *EntityViewMutation) SetName(s string) {
+	m.name = &s
+}
+
+// Name returns the value of the "name" field in the mutation.
+func (m *EntityViewMutation) Name() (r string, exists bool) {
+	v := m.name
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldName returns the old "name" field's value of the EntityView entity.
+// If the EntityView object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityViewMutation) OldName(ctx context.Context) (v string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldName is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldName requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldName: %w", err)
+	}
+	return oldValue.Name, nil
+}
+
+// ResetName resets all changes to the "name" field.
+func (m *EntityViewMutation) ResetName() {
+	m.name = nil
+}
+
+// SetKind sets the "kind" field.
+func (m *EntityViewMutation) SetKind(e entityview.Kind) {
+	m.kind = &e
+}
+
+// Kind returns the value of the "kind" field in the mutation.
+func (m *EntityViewMutation) Kind() (r entityview.Kind, exists bool) {
+	v := m.kind
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldKind returns the old "kind" field's value of the EntityView entity.
+// If the EntityView object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityViewMutation) OldKind(ctx context.Context) (v entityview.Kind, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldKind is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldKind requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldKind: %w", err)
+	}
+	return oldValue.Kind, nil
+}
+
+// ResetKind resets all changes to the "kind" field.
+func (m *EntityViewMutation) ResetKind() {
+	m.kind = nil
+}
+
+// SetTableConfig sets the "table_config" field.
+func (m *EntityViewMutation) SetTableConfig(tvc *types.TableViewConfig) {
+	m.table_config = &tvc
+}
+
+// TableConfig returns the value of the "table_config" field in the mutation.
+func (m *EntityViewMutation) TableConfig() (r *types.TableViewConfig, exists bool) {
+	v := m.table_config
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTableConfig returns the old "table_config" field's value of the EntityView entity.
+// If the EntityView object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *EntityViewMutation) OldTableConfig(ctx context.Context) (v *types.TableViewConfig, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTableConfig is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTableConfig requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTableConfig: %w", err)
+	}
+	return oldValue.TableConfig, nil
+}
+
+// ClearTableConfig clears the value of the "table_config" field.
+func (m *EntityViewMutation) ClearTableConfig() {
+	m.table_config = nil
+	m.clearedFields[entityview.FieldTableConfig] = struct{}{}
+}
+
+// TableConfigCleared returns if the "table_config" field was cleared in this mutation.
+func (m *EntityViewMutation) TableConfigCleared() bool {
+	_, ok := m.clearedFields[entityview.FieldTableConfig]
+	return ok
+}
+
+// ResetTableConfig resets all changes to the "table_config" field.
+func (m *EntityViewMutation) ResetTableConfig() {
+	m.table_config = nil
+	delete(m.clearedFields, entityview.FieldTableConfig)
+}
+
+// ClearGroup clears the "group" edge to the Group entity.
+func (m *EntityViewMutation) ClearGroup() {
+	m.clearedgroup = true
+	m.clearedFields[entityview.FieldGroupID] = struct{}{}
+}
+
+// GroupCleared reports if the "group" edge to the Group entity was cleared.
+func (m *EntityViewMutation) GroupCleared() bool {
+	return m.clearedgroup
+}
+
+// GroupIDs returns the "group" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// GroupID instead. It exists only for internal usage by the builders.
+func (m *EntityViewMutation) GroupIDs() (ids []uuid.UUID) {
+	if id := m.group; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetGroup resets all changes to the "group" edge.
+func (m *EntityViewMutation) ResetGroup() {
+	m.group = nil
+	m.clearedgroup = false
+}
+
+// Where appends a list predicates to the EntityViewMutation builder.
+func (m *EntityViewMutation) Where(ps ...predicate.EntityView) {
+	m.predicates = append(m.predicates, ps...)
+}
+
+// WhereP appends storage-level predicates to the EntityViewMutation builder. Using this method,
+// users can use type-assertion to append predicates that do not depend on any generated package.
+func (m *EntityViewMutation) WhereP(ps ...func(*sql.Selector)) {
+	p := make([]predicate.EntityView, len(ps))
+	for i := range ps {
+		p[i] = ps[i]
+	}
+	m.Where(p...)
+}
+
+// Op returns the operation name.
+func (m *EntityViewMutation) Op() Op {
+	return m.op
+}
+
+// SetOp allows setting the mutation operation.
+func (m *EntityViewMutation) SetOp(op Op) {
+	m.op = op
+}
+
+// Type returns the node type of this mutation (EntityView).
+func (m *EntityViewMutation) Type() string {
+	return m.typ
+}
+
+// Fields returns all fields that were changed during this mutation. Note that in
+// order to get all numeric fields that were incremented/decremented, call
+// AddedFields().
+func (m *EntityViewMutation) Fields() []string {
+	fields := make([]string, 0, 6)
+	if m.created_at != nil {
+		fields = append(fields, entityview.FieldCreatedAt)
+	}
+	if m.updated_at != nil {
+		fields = append(fields, entityview.FieldUpdatedAt)
+	}
+	if m.group != nil {
+		fields = append(fields, entityview.FieldGroupID)
+	}
+	if m.name != nil {
+		fields = append(fields, entityview.FieldName)
+	}
+	if m.kind != nil {
+		fields = append(fields, entityview.FieldKind)
+	}
+	if m.table_config != nil {
+		fields = append(fields, entityview.FieldTableConfig)
+	}
+	return fields
+}
+
+// Field returns the value of a field with the given name. The second boolean
+// return value indicates that this field was not set, or was not defined in the
+// schema.
+func (m *EntityViewMutation) Field(name string) (ent.Value, bool) {
+	switch name {
+	case entityview.FieldCreatedAt:
+		return m.CreatedAt()
+	case entityview.FieldUpdatedAt:
+		return m.UpdatedAt()
+	case entityview.FieldGroupID:
+		return m.GroupID()
+	case entityview.FieldName:
+		return m.Name()
+	case entityview.FieldKind:
+		return m.Kind()
+	case entityview.FieldTableConfig:
+		return m.TableConfig()
+	}
+	return nil, false
+}
+
+// OldField returns the old value of the field from the database. An error is
+// returned if the mutation operation is not UpdateOne, or the query to the
+// database failed.
+func (m *EntityViewMutation) OldField(ctx context.Context, name string) (ent.Value, error) {
+	switch name {
+	case entityview.FieldCreatedAt:
+		return m.OldCreatedAt(ctx)
+	case entityview.FieldUpdatedAt:
+		return m.OldUpdatedAt(ctx)
+	case entityview.FieldGroupID:
+		return m.OldGroupID(ctx)
+	case entityview.FieldName:
+		return m.OldName(ctx)
+	case entityview.FieldKind:
+		return m.OldKind(ctx)
+	case entityview.FieldTableConfig:
+		return m.OldTableConfig(ctx)
+	}
+	return nil, fmt.Errorf("unknown EntityView field %s", name)
+}
+
+// SetField sets the value of a field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EntityViewMutation) SetField(name string, value ent.Value) error {
+	switch name {
+	case entityview.FieldCreatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetCreatedAt(v)
+		return nil
+	case entityview.FieldUpdatedAt:
+		v, ok := value.(time.Time)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetUpdatedAt(v)
+		return nil
+	case entityview.FieldGroupID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetGroupID(v)
+		return nil
+	case entityview.FieldName:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetName(v)
+		return nil
+	case entityview.FieldKind:
+		v, ok := value.(entityview.Kind)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetKind(v)
+		return nil
+	case entityview.FieldTableConfig:
+		v, ok := value.(*types.TableViewConfig)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTableConfig(v)
+		return nil
+	}
+	return fmt.Errorf("unknown EntityView field %s", name)
+}
+
+// AddedFields returns all numeric fields that were incremented/decremented during
+// this mutation.
+func (m *EntityViewMutation) AddedFields() []string {
+	return nil
+}
+
+// AddedField returns the numeric value that was incremented/decremented on a field
+// with the given name. The second boolean return value indicates that this field
+// was not set, or was not defined in the schema.
+func (m *EntityViewMutation) AddedField(name string) (ent.Value, bool) {
+	return nil, false
+}
+
+// AddField adds the value to the field with the given name. It returns an error if
+// the field is not defined in the schema, or if the type mismatched the field
+// type.
+func (m *EntityViewMutation) AddField(name string, value ent.Value) error {
+	switch name {
+	}
+	return fmt.Errorf("unknown EntityView numeric field %s", name)
+}
+
+// ClearedFields returns all nullable fields that were cleared during this
+// mutation.
+func (m *EntityViewMutation) ClearedFields() []string {
+	var fields []string
+	if m.FieldCleared(entityview.FieldTableConfig) {
+		fields = append(fields, entityview.FieldTableConfig)
+	}
+	return fields
+}
+
+// FieldCleared returns a boolean indicating if a field with the given name was
+// cleared in this mutation.
+func (m *EntityViewMutation) FieldCleared(name string) bool {
+	_, ok := m.clearedFields[name]
+	return ok
+}
+
+// ClearField clears the value of the field with the given name. It returns an
+// error if the field is not defined in the schema.
+func (m *EntityViewMutation) ClearField(name string) error {
+	switch name {
+	case entityview.FieldTableConfig:
+		m.ClearTableConfig()
+		return nil
+	}
+	return fmt.Errorf("unknown EntityView nullable field %s", name)
+}
+
+// ResetField resets all changes in the mutation for the field with the given name.
+// It returns an error if the field is not defined in the schema.
+func (m *EntityViewMutation) ResetField(name string) error {
+	switch name {
+	case entityview.FieldCreatedAt:
+		m.ResetCreatedAt()
+		return nil
+	case entityview.FieldUpdatedAt:
+		m.ResetUpdatedAt()
+		return nil
+	case entityview.FieldGroupID:
+		m.ResetGroupID()
+		return nil
+	case entityview.FieldName:
+		m.ResetName()
+		return nil
+	case entityview.FieldKind:
+		m.ResetKind()
+		return nil
+	case entityview.FieldTableConfig:
+		m.ResetTableConfig()
+		return nil
+	}
+	return fmt.Errorf("unknown EntityView field %s", name)
+}
+
+// AddedEdges returns all edge names that were set/added in this mutation.
+func (m *EntityViewMutation) AddedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.group != nil {
+		edges = append(edges, entityview.EdgeGroup)
+	}
+	return edges
+}
+
+// AddedIDs returns all IDs (to other nodes) that were added for the given edge
+// name in this mutation.
+func (m *EntityViewMutation) AddedIDs(name string) []ent.Value {
+	switch name {
+	case entityview.EdgeGroup:
+		if id := m.group; id != nil {
+			return []ent.Value{*id}
+		}
+	}
+	return nil
+}
+
+// RemovedEdges returns all edge names that were removed in this mutation.
+func (m *EntityViewMutation) RemovedEdges() []string {
+	edges := make([]string, 0, 1)
+	return edges
+}
+
+// RemovedIDs returns all IDs (to other nodes) that were removed for the edge with
+// the given name in this mutation.
+func (m *EntityViewMutation) RemovedIDs(name string) []ent.Value {
+	return nil
+}
+
+// ClearedEdges returns all edge names that were cleared in this mutation.
+func (m *EntityViewMutation) ClearedEdges() []string {
+	edges := make([]string, 0, 1)
+	if m.clearedgroup {
+		edges = append(edges, entityview.EdgeGroup)
+	}
+	return edges
+}
+
+// EdgeCleared returns a boolean which indicates if the edge with the given name
+// was cleared in this mutation.
+func (m *EntityViewMutation) EdgeCleared(name string) bool {
+	switch name {
+	case entityview.EdgeGroup:
+		return m.clearedgroup
+	}
+	return false
+}
+
+// ClearEdge clears the value of the edge with the given name. It returns an error
+// if that edge is not defined in the schema.
+func (m *EntityViewMutation) ClearEdge(name string) error {
+	switch name {
+	case entityview.EdgeGroup:
+		m.ClearGroup()
+		return nil
+	}
+	return fmt.Errorf("unknown EntityView unique edge %s", name)
+}
+
+// ResetEdge resets all changes to the edge with the given name in this mutation.
+// It returns an error if the edge is not defined in the schema.
+func (m *EntityViewMutation) ResetEdge(name string) error {
+	switch name {
+	case entityview.EdgeGroup:
+		m.ResetGroup()
+		return nil
+	}
+	return fmt.Errorf("unknown EntityView edge %s", name)
+}
+
 // ExportMutation represents an operation that mutates the Export nodes in the graph.
 type ExportMutation struct {
 	config
@@ -9671,6 +10352,9 @@ type GroupMutation struct {
 	exports                  map[uuid.UUID]struct{}
 	removedexports           map[uuid.UUID]struct{}
 	clearedexports           bool
+	entity_views             map[uuid.UUID]struct{}
+	removedentity_views      map[uuid.UUID]struct{}
+	clearedentity_views      bool
 	done                     bool
 	oldValue                 func(context.Context) (*Group, error)
 	predicates               []predicate.Group
@@ -10356,6 +11040,60 @@ func (m *GroupMutation) ResetExports() {
 	m.removedexports = nil
 }
 
+// AddEntityViewIDs adds the "entity_views" edge to the EntityView entity by ids.
+func (m *GroupMutation) AddEntityViewIDs(ids ...uuid.UUID) {
+	if m.entity_views == nil {
+		m.entity_views = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		m.entity_views[ids[i]] = struct{}{}
+	}
+}
+
+// ClearEntityViews clears the "entity_views" edge to the EntityView entity.
+func (m *GroupMutation) ClearEntityViews() {
+	m.clearedentity_views = true
+}
+
+// EntityViewsCleared reports if the "entity_views" edge to the EntityView entity was cleared.
+func (m *GroupMutation) EntityViewsCleared() bool {
+	return m.clearedentity_views
+}
+
+// RemoveEntityViewIDs removes the "entity_views" edge to the EntityView entity by IDs.
+func (m *GroupMutation) RemoveEntityViewIDs(ids ...uuid.UUID) {
+	if m.removedentity_views == nil {
+		m.removedentity_views = make(map[uuid.UUID]struct{})
+	}
+	for i := range ids {
+		delete(m.entity_views, ids[i])
+		m.removedentity_views[ids[i]] = struct{}{}
+	}
+}
+
+// RemovedEntityViews returns the removed IDs of the "entity_views" edge to the EntityView entity.
+func (m *GroupMutation) RemovedEntityViewsIDs() (ids []uuid.UUID) {
+	for id := range m.removedentity_views {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// EntityViewsIDs returns the "entity_views" edge IDs in the mutation.
+func (m *GroupMutation) EntityViewsIDs() (ids []uuid.UUID) {
+	for id := range m.entity_views {
+		ids = append(ids, id)
+	}
+	return
+}
+
+// ResetEntityViews resets all changes to the "entity_views" edge.
+func (m *GroupMutation) ResetEntityViews() {
+	m.entity_views = nil
+	m.clearedentity_views = false
+	m.removedentity_views = nil
+}
+
 // Where appends a list predicates to the GroupMutation builder.
 func (m *GroupMutation) Where(ps ...predicate.Group) {
 	m.predicates = append(m.predicates, ps...)
@@ -10540,7 +11278,7 @@ func (m *GroupMutation) ResetField(name string) error {
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *GroupMutation) AddedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.users != nil {
 		edges = append(edges, group.EdgeUsers)
 	}
@@ -10564,6 +11302,9 @@ func (m *GroupMutation) AddedEdges() []string {
 	}
 	if m.exports != nil {
 		edges = append(edges, group.EdgeExports)
+	}
+	if m.entity_views != nil {
+		edges = append(edges, group.EdgeEntityViews)
 	}
 	return edges
 }
@@ -10620,13 +11361,19 @@ func (m *GroupMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case group.EdgeEntityViews:
+		ids := make([]ent.Value, 0, len(m.entity_views))
+		for id := range m.entity_views {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *GroupMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.removedusers != nil {
 		edges = append(edges, group.EdgeUsers)
 	}
@@ -10650,6 +11397,9 @@ func (m *GroupMutation) RemovedEdges() []string {
 	}
 	if m.removedexports != nil {
 		edges = append(edges, group.EdgeExports)
+	}
+	if m.removedentity_views != nil {
+		edges = append(edges, group.EdgeEntityViews)
 	}
 	return edges
 }
@@ -10706,13 +11456,19 @@ func (m *GroupMutation) RemovedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case group.EdgeEntityViews:
+		ids := make([]ent.Value, 0, len(m.removedentity_views))
+		for id := range m.removedentity_views {
+			ids = append(ids, id)
+		}
+		return ids
 	}
 	return nil
 }
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *GroupMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 8)
+	edges := make([]string, 0, 9)
 	if m.clearedusers {
 		edges = append(edges, group.EdgeUsers)
 	}
@@ -10737,6 +11493,9 @@ func (m *GroupMutation) ClearedEdges() []string {
 	if m.clearedexports {
 		edges = append(edges, group.EdgeExports)
 	}
+	if m.clearedentity_views {
+		edges = append(edges, group.EdgeEntityViews)
+	}
 	return edges
 }
 
@@ -10760,6 +11519,8 @@ func (m *GroupMutation) EdgeCleared(name string) bool {
 		return m.clearedentity_templates
 	case group.EdgeExports:
 		return m.clearedexports
+	case group.EdgeEntityViews:
+		return m.clearedentity_views
 	}
 	return false
 }
@@ -10799,6 +11560,9 @@ func (m *GroupMutation) ResetEdge(name string) error {
 		return nil
 	case group.EdgeExports:
 		m.ResetExports()
+		return nil
+	case group.EdgeEntityViews:
+		m.ResetEntityViews()
 		return nil
 	}
 	return fmt.Errorf("unknown Group edge %s", name)

@@ -26,6 +26,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entity"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytemplate"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytype"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityview"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/notifier"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/tag"
@@ -193,6 +194,12 @@ var exportTables = []tableSpec{
 		groupCols: []string{"group_id"},
 		userCols:  []string{"user_id"},
 	},
+	{
+		name:      "entity_views",
+		scope:     "group_id = ?",
+		pkCol:     "id",
+		groupCols: []string{"group_id"},
+	},
 }
 
 // Manifest is the contents of manifest.json inside the export zip.
@@ -275,7 +282,7 @@ func (s *ExportService) EnqueueImport(ctx context.Context, gid uuid.UUID, userID
 // the lazily-created "Item"/"Location" entity_types from registration are
 // tolerated — the import wipes them before restoring. Any extra rows beyond
 // those seed baselines, or any presence in tables that aren't seeded
-// (entity_templates, notifiers), blocks the import so a one-click restore
+// (entity_templates, notifiers, entity_views), blocks the import so a one-click restore
 // can't silently destroy work.
 //
 // The seed-baseline counts are coarse: a user who deletes some default tags
@@ -341,6 +348,14 @@ func (s *ExportService) IsGroupReadyForImport(ctx context.Context, gid uuid.UUID
 		return false, err
 	}
 	if notifiers > 0 {
+		return false, nil
+	}
+
+	views, err := s.db.EntityView.Query().Where(entityview.GroupID(gid)).Count(ctx)
+	if err != nil {
+		return false, err
+	}
+	if views > 0 {
 		return false, nil
 	}
 

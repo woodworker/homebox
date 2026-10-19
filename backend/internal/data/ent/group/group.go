@@ -39,6 +39,8 @@ const (
 	EdgeEntityTemplates = "entity_templates"
 	// EdgeExports holds the string denoting the exports edge name in mutations.
 	EdgeExports = "exports"
+	// EdgeEntityViews holds the string denoting the entity_views edge name in mutations.
+	EdgeEntityViews = "entity_views"
 	// EdgeUserGroups holds the string denoting the user_groups edge name in mutations.
 	EdgeUserGroups = "user_groups"
 	// Table holds the table name of the group in the database.
@@ -97,6 +99,13 @@ const (
 	ExportsInverseTable = "exports"
 	// ExportsColumn is the table column denoting the exports relation/edge.
 	ExportsColumn = "group_id"
+	// EntityViewsTable is the table that holds the entity_views relation/edge.
+	EntityViewsTable = "entity_views"
+	// EntityViewsInverseTable is the table name for the EntityView entity.
+	// It exists in this package in order to avoid circular dependency with the "entityview" package.
+	EntityViewsInverseTable = "entity_views"
+	// EntityViewsColumn is the table column denoting the entity_views relation/edge.
+	EntityViewsColumn = "group_id"
 	// UserGroupsTable is the table that holds the user_groups relation/edge.
 	UserGroupsTable = "user_groups"
 	// UserGroupsInverseTable is the table name for the UserGroup entity.
@@ -286,6 +295,20 @@ func ByExports(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 	}
 }
 
+// ByEntityViewsCount orders the results by entity_views count.
+func ByEntityViewsCount(opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborsCount(s, newEntityViewsStep(), opts...)
+	}
+}
+
+// ByEntityViews orders the results by entity_views terms.
+func ByEntityViews(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newEntityViewsStep(), append([]sql.OrderTerm{term}, terms...)...)
+	}
+}
+
 // ByUserGroupsCount orders the results by user_groups count.
 func ByUserGroupsCount(opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -353,6 +376,13 @@ func newExportsStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(ExportsInverseTable, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ExportsTable, ExportsColumn),
+	)
+}
+func newEntityViewsStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(EntityViewsInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.O2M, false, EntityViewsTable, EntityViewsColumn),
 	)
 }
 func newUserGroupsStep() *sqlgraph.Step {

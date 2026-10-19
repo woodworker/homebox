@@ -192,6 +192,13 @@ func (a *app) mountRoutes(r *chi.Mux, chain *errchain.ErrChain, repos *repo.AllR
 		r.Put("/tags/{id}", chain.ToHandlerFunc(v1Ctrl.HandleTagUpdate(), userMW...))
 		r.Delete("/tags/{id}", chain.ToHandlerFunc(v1Ctrl.HandleTagDelete(), userMW...))
 
+		// View endpoints
+		r.Get("/views", chain.ToHandlerFunc(v1Ctrl.HandleEntityViewGetAll(), userMW...))
+		r.Post("/views", chain.ToHandlerFunc(v1Ctrl.HandleEntityViewCreate(), userMW...))
+		r.Get("/views/{id}", chain.ToHandlerFunc(v1Ctrl.HandleEntityViewGet(), userMW...))
+		r.Put("/views/{id}", chain.ToHandlerFunc(v1Ctrl.HandleEntityViewUpdate(), userMW...))
+		r.Delete("/views/{id}", chain.ToHandlerFunc(v1Ctrl.HandleEntityViewDelete(), userMW...))
+
 		// Entity Type endpoints
 		r.Get("/entity-types", chain.ToHandlerFunc(v1Ctrl.HandleEntityTypeGetAll(), userMW...))
 		r.Post("/entity-types", chain.ToHandlerFunc(v1Ctrl.HandleEntityTypeCreate(), userMW...))

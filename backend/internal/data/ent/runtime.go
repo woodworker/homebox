@@ -13,6 +13,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityfield"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytemplate"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytype"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityview"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/export"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/groupinvitationtoken"
@@ -426,6 +427,43 @@ func init() {
 	entitytypeDescID := entitytypeMixinFields0[0].Descriptor()
 	// entitytype.DefaultID holds the default value on creation for the id field.
 	entitytype.DefaultID = entitytypeDescID.Default.(func() uuid.UUID)
+	entityviewMixin := schema.EntityView{}.Mixin()
+	entityviewMixinFields0 := entityviewMixin[0].Fields()
+	_ = entityviewMixinFields0
+	entityviewFields := schema.EntityView{}.Fields()
+	_ = entityviewFields
+	// entityviewDescCreatedAt is the schema descriptor for created_at field.
+	entityviewDescCreatedAt := entityviewMixinFields0[1].Descriptor()
+	// entityview.DefaultCreatedAt holds the default value on creation for the created_at field.
+	entityview.DefaultCreatedAt = entityviewDescCreatedAt.Default.(func() time.Time)
+	// entityviewDescUpdatedAt is the schema descriptor for updated_at field.
+	entityviewDescUpdatedAt := entityviewMixinFields0[2].Descriptor()
+	// entityview.DefaultUpdatedAt holds the default value on creation for the updated_at field.
+	entityview.DefaultUpdatedAt = entityviewDescUpdatedAt.Default.(func() time.Time)
+	// entityview.UpdateDefaultUpdatedAt holds the default value on update for the updated_at field.
+	entityview.UpdateDefaultUpdatedAt = entityviewDescUpdatedAt.UpdateDefault.(func() time.Time)
+	// entityviewDescName is the schema descriptor for name field.
+	entityviewDescName := entityviewFields[0].Descriptor()
+	// entityview.NameValidator is a validator for the "name" field. It is called by the builders before save.
+	entityview.NameValidator = func() func(string) error {
+		validators := entityviewDescName.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(name string) error {
+			for _, fn := range fns {
+				if err := fn(name); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
+	// entityviewDescID is the schema descriptor for id field.
+	entityviewDescID := entityviewMixinFields0[0].Descriptor()
+	// entityview.DefaultID holds the default value on creation for the id field.
+	entityview.DefaultID = entityviewDescID.Default.(func() uuid.UUID)
 	exportMixin := schema.Export{}.Mixin()
 	exportMixinFields0 := exportMixin[0].Fields()
 	_ = exportMixinFields0

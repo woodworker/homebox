@@ -335,6 +335,37 @@ var (
 			},
 		},
 	}
+	// EntityViewsColumns holds the columns for the "entity_views" table.
+	EntityViewsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "updated_at", Type: field.TypeTime},
+		{Name: "name", Type: field.TypeString, Size: 255},
+		{Name: "kind", Type: field.TypeEnum, Enums: []string{"table"}},
+		{Name: "table_config", Type: field.TypeJSON, Nullable: true},
+		{Name: "group_id", Type: field.TypeUUID},
+	}
+	// EntityViewsTable holds the schema information for the "entity_views" table.
+	EntityViewsTable = &schema.Table{
+		Name:       "entity_views",
+		Columns:    EntityViewsColumns,
+		PrimaryKey: []*schema.Column{EntityViewsColumns[0]},
+		ForeignKeys: []*schema.ForeignKey{
+			{
+				Symbol:     "entity_views_groups_entity_views",
+				Columns:    []*schema.Column{EntityViewsColumns[6]},
+				RefColumns: []*schema.Column{GroupsColumns[0]},
+				OnDelete:   schema.Cascade,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "entityview_group_id",
+				Unique:  false,
+				Columns: []*schema.Column{EntityViewsColumns[6]},
+			},
+		},
+	}
 	// ExportsColumns holds the columns for the "exports" table.
 	ExportsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
@@ -672,6 +703,7 @@ var (
 		EntityFieldsTable,
 		EntityTemplatesTable,
 		EntityTypesTable,
+		EntityViewsTable,
 		ExportsTable,
 		GroupsTable,
 		GroupInvitationTokensTable,
@@ -701,6 +733,7 @@ func init() {
 	EntityTemplatesTable.ForeignKeys[1].RefTable = GroupsTable
 	EntityTypesTable.ForeignKeys[0].RefTable = EntityTemplatesTable
 	EntityTypesTable.ForeignKeys[1].RefTable = GroupsTable
+	EntityViewsTable.ForeignKeys[0].RefTable = GroupsTable
 	ExportsTable.ForeignKeys[0].RefTable = GroupsTable
 	GroupInvitationTokensTable.ForeignKeys[0].RefTable = GroupsTable
 	MaintenanceEntriesTable.ForeignKeys[0].RefTable = EntitiesTable

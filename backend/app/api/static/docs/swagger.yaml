@@ -499,6 +499,45 @@ definitions:
         - $ref: '#/definitions/ent.Group'
         description: Group holds the value of the group edge.
     type: object
+  ent.EntityView:
+    properties:
+      created_at:
+        description: CreatedAt holds the value of the "created_at" field.
+        type: string
+      edges:
+        allOf:
+        - $ref: '#/definitions/ent.EntityViewEdges'
+        description: |-
+          Edges holds the relations/edges for other nodes in the graph.
+          The values are being populated by the EntityViewQuery when eager-loading is set.
+      group_id:
+        description: GroupID holds the value of the "group_id" field.
+        type: string
+      id:
+        description: ID of the ent.
+        type: string
+      kind:
+        allOf:
+        - $ref: '#/definitions/entityview.Kind'
+        description: Kind holds the value of the "kind" field.
+      name:
+        description: Name holds the value of the "name" field.
+        type: string
+      table_config:
+        allOf:
+        - $ref: '#/definitions/types.TableViewConfig'
+        description: Settings for kind=table
+      updated_at:
+        description: UpdatedAt holds the value of the "updated_at" field.
+        type: string
+    type: object
+  ent.EntityViewEdges:
+    properties:
+      group:
+        allOf:
+        - $ref: '#/definitions/ent.Group'
+        description: Group holds the value of the group edge.
+    type: object
   ent.Export:
     properties:
       artifact_path:
@@ -587,6 +626,11 @@ definitions:
         description: EntityTypes holds the value of the entity_types edge.
         items:
           $ref: '#/definitions/ent.EntityType'
+        type: array
+      entity_views:
+        description: EntityViews holds the value of the entity_views edge.
+        items:
+          $ref: '#/definitions/ent.EntityView'
         type: array
       exports:
         description: Exports holds the value of the exports edge.
@@ -998,6 +1042,12 @@ definitions:
     - TypeNumber
     - TypeBoolean
     - TypeTime
+  entityview.Kind:
+    enum:
+    - table
+    type: string
+    x-enum-varnames:
+    - KindTable
   export.Kind:
     enum:
     - export
@@ -1718,6 +1768,62 @@ definitions:
     required:
     - name
     type: object
+  repo.EntityViewCreate:
+    properties:
+      kind:
+        enum:
+        - table
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      table:
+        allOf:
+        - $ref: '#/definitions/types.TableViewConfig'
+        x-nullable: true
+    required:
+    - kind
+    - name
+    type: object
+  repo.EntityViewOut:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      kind:
+        type: string
+      name:
+        type: string
+      table:
+        allOf:
+        - $ref: '#/definitions/types.TableViewConfig'
+        x-nullable: true
+        x-omitempty: true
+      updatedAt:
+        type: string
+    type: object
+  repo.EntityViewUpdate:
+    properties:
+      id:
+        type: string
+      kind:
+        enum:
+        - table
+        type: string
+      name:
+        maxLength: 255
+        minLength: 1
+        type: string
+      table:
+        allOf:
+        - $ref: '#/definitions/types.TableViewConfig'
+        x-nullable: true
+    required:
+    - kind
+    - name
+    type: object
   repo.ExportOut:
     properties:
       artifactPath:
@@ -2191,6 +2297,55 @@ definitions:
     - TypeNumber
     - TypeBoolean
     - TypeTime
+  types.TableViewColumn:
+    properties:
+      key:
+        maxLength: 255
+        type: string
+      kind:
+        enum:
+        - builtin
+        - field
+        type: string
+    required:
+    - key
+    - kind
+    type: object
+  types.TableViewConfig:
+    properties:
+      columns:
+        items:
+          $ref: '#/definitions/types.TableViewColumn'
+        maxItems: 50
+        minItems: 1
+        type: array
+      sort:
+        allOf:
+        - $ref: '#/definitions/types.TableViewSort'
+        x-nullable: true
+    required:
+    - columns
+    type: object
+  types.TableViewSort:
+    properties:
+      direction:
+        enum:
+        - asc
+        - desc
+        type: string
+      key:
+        maxLength: 255
+        type: string
+      kind:
+        enum:
+        - builtin
+        - field
+        type: string
+    required:
+    - direction
+    - key
+    - kind
+    type: object
   usergroup.Role:
     enum:
     - user
@@ -4396,6 +4551,104 @@ paths:
       summary: Update user settings
       tags:
       - User
+  /v1/views:
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/repo.EntityViewOut'
+            type: array
+      security:
+      - Bearer: []
+      summary: Get All Entity Views
+      tags:
+      - Entity Views
+    post:
+      parameters:
+      - description: Entity View Data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/repo.EntityViewCreate'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/repo.EntityViewOut'
+      security:
+      - Bearer: []
+      summary: Create Entity View
+      tags:
+      - Entity Views
+  /v1/views/{id}:
+    delete:
+      parameters:
+      - description: Entity View ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+      security:
+      - Bearer: []
+      summary: Delete Entity View
+      tags:
+      - Entity Views
+    get:
+      parameters:
+      - description: Entity View ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/repo.EntityViewOut'
+      security:
+      - Bearer: []
+      summary: Get Entity View
+      tags:
+      - Entity Views
+    put:
+      parameters:
+      - description: Entity View ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Entity View Data
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/repo.EntityViewUpdate'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/repo.EntityViewOut'
+      security:
+      - Bearer: []
+      summary: Update Entity View
+      tags:
+      - Entity Views
 schemes:
 - https
 - http

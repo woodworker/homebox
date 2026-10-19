@@ -24,6 +24,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityfield"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytemplate"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytype"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityview"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/export"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/groupinvitationtoken"
@@ -57,6 +58,8 @@ type Client struct {
 	EntityTemplate *EntityTemplateClient
 	// EntityType is the client for interacting with the EntityType builders.
 	EntityType *EntityTypeClient
+	// EntityView is the client for interacting with the EntityView builders.
+	EntityView *EntityViewClient
 	// Export is the client for interacting with the Export builders.
 	Export *ExportClient
 	// Group is the client for interacting with the Group builders.
@@ -96,6 +99,7 @@ func (c *Client) init() {
 	c.EntityField = NewEntityFieldClient(c.config)
 	c.EntityTemplate = NewEntityTemplateClient(c.config)
 	c.EntityType = NewEntityTypeClient(c.config)
+	c.EntityView = NewEntityViewClient(c.config)
 	c.Export = NewExportClient(c.config)
 	c.Group = NewGroupClient(c.config)
 	c.GroupInvitationToken = NewGroupInvitationTokenClient(c.config)
@@ -206,6 +210,7 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		EntityField:          NewEntityFieldClient(cfg),
 		EntityTemplate:       NewEntityTemplateClient(cfg),
 		EntityType:           NewEntityTypeClient(cfg),
+		EntityView:           NewEntityViewClient(cfg),
 		Export:               NewExportClient(cfg),
 		Group:                NewGroupClient(cfg),
 		GroupInvitationToken: NewGroupInvitationTokenClient(cfg),
@@ -243,6 +248,7 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		EntityField:          NewEntityFieldClient(cfg),
 		EntityTemplate:       NewEntityTemplateClient(cfg),
 		EntityType:           NewEntityTypeClient(cfg),
+		EntityView:           NewEntityViewClient(cfg),
 		Export:               NewExportClient(cfg),
 		Group:                NewGroupClient(cfg),
 		GroupInvitationToken: NewGroupInvitationTokenClient(cfg),
@@ -283,9 +289,9 @@ func (c *Client) Close() error {
 func (c *Client) Use(hooks ...Hook) {
 	for _, n := range []interface{ Use(...Hook) }{
 		c.APIKey, c.Attachment, c.AuthRoles, c.AuthTokens, c.Entity, c.EntityField,
-		c.EntityTemplate, c.EntityType, c.Export, c.Group, c.GroupInvitationToken,
-		c.MaintenanceEntry, c.Notifier, c.PasswordResetTokens, c.Tag, c.TemplateField,
-		c.User, c.UserGroup,
+		c.EntityTemplate, c.EntityType, c.EntityView, c.Export, c.Group,
+		c.GroupInvitationToken, c.MaintenanceEntry, c.Notifier, c.PasswordResetTokens,
+		c.Tag, c.TemplateField, c.User, c.UserGroup,
 	} {
 		n.Use(hooks...)
 	}
@@ -296,9 +302,9 @@ func (c *Client) Use(hooks ...Hook) {
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	for _, n := range []interface{ Intercept(...Interceptor) }{
 		c.APIKey, c.Attachment, c.AuthRoles, c.AuthTokens, c.Entity, c.EntityField,
-		c.EntityTemplate, c.EntityType, c.Export, c.Group, c.GroupInvitationToken,
-		c.MaintenanceEntry, c.Notifier, c.PasswordResetTokens, c.Tag, c.TemplateField,
-		c.User, c.UserGroup,
+		c.EntityTemplate, c.EntityType, c.EntityView, c.Export, c.Group,
+		c.GroupInvitationToken, c.MaintenanceEntry, c.Notifier, c.PasswordResetTokens,
+		c.Tag, c.TemplateField, c.User, c.UserGroup,
 	} {
 		n.Intercept(interceptors...)
 	}
@@ -323,6 +329,8 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.EntityTemplate.mutate(ctx, m)
 	case *EntityTypeMutation:
 		return c.EntityType.mutate(ctx, m)
+	case *EntityViewMutation:
+		return c.EntityView.mutate(ctx, m)
 	case *ExportMutation:
 		return c.Export.mutate(ctx, m)
 	case *GroupMutation:
@@ -1780,6 +1788,155 @@ func (c *EntityTypeClient) mutate(ctx context.Context, m *EntityTypeMutation) (V
 	}
 }
 
+// EntityViewClient is a client for the EntityView schema.
+type EntityViewClient struct {
+	config
+}
+
+// NewEntityViewClient returns a client for the EntityView from the given config.
+func NewEntityViewClient(c config) *EntityViewClient {
+	return &EntityViewClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `entityview.Hooks(f(g(h())))`.
+func (c *EntityViewClient) Use(hooks ...Hook) {
+	c.hooks.EntityView = append(c.hooks.EntityView, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `entityview.Intercept(f(g(h())))`.
+func (c *EntityViewClient) Intercept(interceptors ...Interceptor) {
+	c.inters.EntityView = append(c.inters.EntityView, interceptors...)
+}
+
+// Create returns a builder for creating a EntityView entity.
+func (c *EntityViewClient) Create() *EntityViewCreate {
+	mutation := newEntityViewMutation(c.config, OpCreate)
+	return &EntityViewCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of EntityView entities.
+func (c *EntityViewClient) CreateBulk(builders ...*EntityViewCreate) *EntityViewCreateBulk {
+	return &EntityViewCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *EntityViewClient) MapCreateBulk(slice any, setFunc func(*EntityViewCreate, int)) *EntityViewCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &EntityViewCreateBulk{err: fmt.Errorf("calling to EntityViewClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*EntityViewCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &EntityViewCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for EntityView.
+func (c *EntityViewClient) Update() *EntityViewUpdate {
+	mutation := newEntityViewMutation(c.config, OpUpdate)
+	return &EntityViewUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *EntityViewClient) UpdateOne(_m *EntityView) *EntityViewUpdateOne {
+	mutation := newEntityViewMutation(c.config, OpUpdateOne, withEntityView(_m))
+	return &EntityViewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *EntityViewClient) UpdateOneID(id uuid.UUID) *EntityViewUpdateOne {
+	mutation := newEntityViewMutation(c.config, OpUpdateOne, withEntityViewID(id))
+	return &EntityViewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for EntityView.
+func (c *EntityViewClient) Delete() *EntityViewDelete {
+	mutation := newEntityViewMutation(c.config, OpDelete)
+	return &EntityViewDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *EntityViewClient) DeleteOne(_m *EntityView) *EntityViewDeleteOne {
+	return c.DeleteOneID(_m.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *EntityViewClient) DeleteOneID(id uuid.UUID) *EntityViewDeleteOne {
+	builder := c.Delete().Where(entityview.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &EntityViewDeleteOne{builder}
+}
+
+// Query returns a query builder for EntityView.
+func (c *EntityViewClient) Query() *EntityViewQuery {
+	return &EntityViewQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeEntityView},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a EntityView entity by its id.
+func (c *EntityViewClient) Get(ctx context.Context, id uuid.UUID) (*EntityView, error) {
+	return c.Query().Where(entityview.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *EntityViewClient) GetX(ctx context.Context, id uuid.UUID) *EntityView {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// QueryGroup queries the group edge of a EntityView.
+func (c *EntityViewClient) QueryGroup(_m *EntityView) *GroupQuery {
+	query := (&GroupClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(entityview.Table, entityview.FieldID, id),
+			sqlgraph.To(group.Table, group.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, true, entityview.GroupTable, entityview.GroupColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// Hooks returns the client hooks.
+func (c *EntityViewClient) Hooks() []Hook {
+	return c.hooks.EntityView
+}
+
+// Interceptors returns the client interceptors.
+func (c *EntityViewClient) Interceptors() []Interceptor {
+	return c.inters.EntityView
+}
+
+func (c *EntityViewClient) mutate(ctx context.Context, m *EntityViewMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&EntityViewCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&EntityViewUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&EntityViewUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&EntityViewDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("ent: unknown EntityView mutation op: %q", m.Op())
+	}
+}
+
 // ExportClient is a client for the Export schema.
 type ExportClient struct {
 	config
@@ -2158,6 +2315,22 @@ func (c *GroupClient) QueryExports(_m *Group) *ExportQuery {
 			sqlgraph.From(group.Table, group.FieldID, id),
 			sqlgraph.To(export.Table, export.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, group.ExportsTable, group.ExportsColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
+// QueryEntityViews queries the entity_views edge of a Group.
+func (c *GroupClient) QueryEntityViews(_m *Group) *EntityViewQuery {
+	query := (&EntityViewClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(group.Table, group.FieldID, id),
+			sqlgraph.To(entityview.Table, entityview.FieldID),
+			sqlgraph.Edge(sqlgraph.O2M, false, group.EntityViewsTable, group.EntityViewsColumn),
 		)
 		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
 		return fromV, nil
@@ -3513,12 +3686,13 @@ func (c *UserGroupClient) mutate(ctx context.Context, m *UserGroupMutation) (Val
 type (
 	hooks struct {
 		APIKey, Attachment, AuthRoles, AuthTokens, Entity, EntityField, EntityTemplate,
-		EntityType, Export, Group, GroupInvitationToken, MaintenanceEntry, Notifier,
-		PasswordResetTokens, Tag, TemplateField, User, UserGroup []ent.Hook
+		EntityType, EntityView, Export, Group, GroupInvitationToken, MaintenanceEntry,
+		Notifier, PasswordResetTokens, Tag, TemplateField, User, UserGroup []ent.Hook
 	}
 	inters struct {
 		APIKey, Attachment, AuthRoles, AuthTokens, Entity, EntityField, EntityTemplate,
-		EntityType, Export, Group, GroupInvitationToken, MaintenanceEntry, Notifier,
-		PasswordResetTokens, Tag, TemplateField, User, UserGroup []ent.Interceptor
+		EntityType, EntityView, Export, Group, GroupInvitationToken, MaintenanceEntry,
+		Notifier, PasswordResetTokens, Tag, TemplateField, User,
+		UserGroup []ent.Interceptor
 	}
 )

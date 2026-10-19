@@ -30,6 +30,9 @@ type EntityTemplate func(*sql.Selector)
 // EntityType is the predicate function for entitytype builders.
 type EntityType func(*sql.Selector)
 
+// EntityView is the predicate function for entityview builders.
+type EntityView func(*sql.Selector)
+
 // Export is the predicate function for export builders.
 type Export func(*sql.Selector)
 

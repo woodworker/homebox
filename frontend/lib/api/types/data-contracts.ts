@@ -49,6 +49,10 @@ export enum ExportKind {
   KindImport = "import",
 }
 
+export enum EntityviewKind {
+  KindTable = "table",
+}
+
 export enum EntityfieldType {
   TypeText = "text",
   TypeNumber = "number",
@@ -379,6 +383,33 @@ export interface EntEntityTypeEdges {
   group: EntGroup;
 }
 
+export interface EntEntityView {
+  /** CreatedAt holds the value of the "created_at" field. */
+  created_at: string;
+  /**
+   * Edges holds the relations/edges for other nodes in the graph.
+   * The values are being populated by the EntityViewQuery when eager-loading is set.
+   */
+  edges: EntEntityViewEdges;
+  /** GroupID holds the value of the "group_id" field. */
+  group_id: string;
+  /** ID of the ent. */
+  id: string;
+  /** Kind holds the value of the "kind" field. */
+  kind: EntityviewKind;
+  /** Name holds the value of the "name" field. */
+  name: string;
+  /** Settings for kind=table */
+  table_config: TypesTableViewConfig;
+  /** UpdatedAt holds the value of the "updated_at" field. */
+  updated_at: string;
+}
+
+export interface EntEntityViewEdges {
+  /** Group holds the value of the group edge. */
+  group: EntGroup;
+}
+
 export interface EntExport {
   /** ArtifactPath holds the value of the "artifact_path" field. */
   artifact_path: string;
@@ -437,6 +468,8 @@ export interface EntGroupEdges {
   entity_templates: EntEntityTemplate[];
   /** EntityTypes holds the value of the entity_types edge. */
   entity_types: EntEntityType[];
+  /** EntityViews holds the value of the entity_views edge. */
+  entity_views: EntEntityView[];
   /** Exports holds the value of the exports edge. */
   exports: EntExport[];
   /** InvitationTokens holds the value of the invitation_tokens edge. */
@@ -1064,6 +1097,36 @@ export interface EntityUpdate {
   warrantyExpires: Date | string;
 }
 
+export interface EntityViewCreate {
+  kind: "table";
+  /**
+   * @minLength 1
+   * @maxLength 255
+   */
+  name: string;
+  table?: TypesTableViewConfig | null;
+}
+
+export interface EntityViewOut {
+  createdAt: Date | string;
+  id: string;
+  kind: string;
+  name: string;
+  table?: TypesTableViewConfig | null;
+  updatedAt: Date | string;
+}
+
+export interface EntityViewUpdate {
+  id: string;
+  kind: "table";
+  /**
+   * @minLength 1
+   * @maxLength 255
+   */
+  name: string;
+  table?: TypesTableViewConfig | null;
+}
+
 export interface ExportOut {
   artifactPath: string;
   createdAt: Date | string;
@@ -1339,6 +1402,28 @@ export interface UserRegistration {
   name: string;
   password: string;
   token: string;
+}
+
+export interface TypesTableViewColumn {
+  /** @maxLength 255 */
+  key: string;
+  kind: "builtin" | "field";
+}
+
+export interface TypesTableViewConfig {
+  /**
+   * @maxItems 50
+   * @minItems 1
+   */
+  columns: TypesTableViewColumn[];
+  sort?: TypesTableViewSort | null;
+}
+
+export interface TypesTableViewSort {
+  direction: "asc" | "desc";
+  /** @maxLength 255 */
+  key: string;
+  kind: "builtin" | "field";
 }
 
 export interface APISummary {

@@ -3228,6 +3228,167 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/v1/views": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Entity Views"
+                ],
+                "summary": "Get All Entity Views",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/repo.EntityViewOut"
+                            }
+                        }
+                    }
+                }
+            },
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Entity Views"
+                ],
+                "summary": "Create Entity View",
+                "parameters": [
+                    {
+                        "description": "Entity View Data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/repo.EntityViewCreate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Created",
+                        "schema": {
+                            "$ref": "#/definitions/repo.EntityViewOut"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/views/{id}": {
+            "get": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Entity Views"
+                ],
+                "summary": "Get Entity View",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entity View ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/repo.EntityViewOut"
+                        }
+                    }
+                }
+            },
+            "put": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Entity Views"
+                ],
+                "summary": "Update Entity View",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entity View ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Entity View Data",
+                        "name": "payload",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/repo.EntityViewUpdate"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/repo.EntityViewOut"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Entity Views"
+                ],
+                "summary": "Delete Entity View",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Entity View ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -3953,6 +4114,68 @@ const docTemplate = `{
                 }
             }
         },
+        "ent.EntityView": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "description": "CreatedAt holds the value of the \"created_at\" field.",
+                    "type": "string"
+                },
+                "edges": {
+                    "description": "Edges holds the relations/edges for other nodes in the graph.\nThe values are being populated by the EntityViewQuery when eager-loading is set.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ent.EntityViewEdges"
+                        }
+                    ]
+                },
+                "group_id": {
+                    "description": "GroupID holds the value of the \"group_id\" field.",
+                    "type": "string"
+                },
+                "id": {
+                    "description": "ID of the ent.",
+                    "type": "string"
+                },
+                "kind": {
+                    "description": "Kind holds the value of the \"kind\" field.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/entityview.Kind"
+                        }
+                    ]
+                },
+                "name": {
+                    "description": "Name holds the value of the \"name\" field.",
+                    "type": "string"
+                },
+                "table_config": {
+                    "description": "Settings for kind=table",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.TableViewConfig"
+                        }
+                    ]
+                },
+                "updated_at": {
+                    "description": "UpdatedAt holds the value of the \"updated_at\" field.",
+                    "type": "string"
+                }
+            }
+        },
+        "ent.EntityViewEdges": {
+            "type": "object",
+            "properties": {
+                "group": {
+                    "description": "Group holds the value of the group edge.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ent.Group"
+                        }
+                    ]
+                }
+            }
+        },
         "ent.Export": {
             "type": "object",
             "properties": {
@@ -4082,6 +4305,13 @@ const docTemplate = `{
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/ent.EntityType"
+                    }
+                },
+                "entity_views": {
+                    "description": "EntityViews holds the value of the entity_views edge.",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/ent.EntityView"
                     }
                 },
                 "exports": {
@@ -4680,6 +4910,15 @@ const docTemplate = `{
                 "TypeNumber",
                 "TypeBoolean",
                 "TypeTime"
+            ]
+        },
+        "entityview.Kind": {
+            "type": "string",
+            "enum": [
+                "table"
+            ],
+            "x-enum-varnames": [
+                "KindTable"
             ]
         },
         "export.Kind": {
@@ -5695,6 +5934,94 @@ const docTemplate = `{
                 }
             }
         },
+        "repo.EntityViewCreate": {
+            "type": "object",
+            "required": [
+                "kind",
+                "name"
+            ],
+            "properties": {
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "table"
+                    ]
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "table": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.TableViewConfig"
+                        }
+                    ],
+                    "x-nullable": true
+                }
+            }
+        },
+        "repo.EntityViewOut": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "table": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.TableViewConfig"
+                        }
+                    ],
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
+        "repo.EntityViewUpdate": {
+            "type": "object",
+            "required": [
+                "kind",
+                "name"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "table"
+                    ]
+                },
+                "name": {
+                    "type": "string",
+                    "maxLength": 255,
+                    "minLength": 1
+                },
+                "table": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.TableViewConfig"
+                        }
+                    ],
+                    "x-nullable": true
+                }
+            }
+        },
         "repo.ExportOut": {
             "type": "object",
             "properties": {
@@ -6400,6 +6727,78 @@ const docTemplate = `{
                 "TypeBoolean",
                 "TypeTime"
             ]
+        },
+        "types.TableViewColumn": {
+            "type": "object",
+            "required": [
+                "key",
+                "kind"
+            ],
+            "properties": {
+                "key": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "builtin",
+                        "field"
+                    ]
+                }
+            }
+        },
+        "types.TableViewConfig": {
+            "type": "object",
+            "required": [
+                "columns"
+            ],
+            "properties": {
+                "columns": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/types.TableViewColumn"
+                    }
+                },
+                "sort": {
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/types.TableViewSort"
+                        }
+                    ],
+                    "x-nullable": true
+                }
+            }
+        },
+        "types.TableViewSort": {
+            "type": "object",
+            "required": [
+                "direction",
+                "key",
+                "kind"
+            ],
+            "properties": {
+                "direction": {
+                    "type": "string",
+                    "enum": [
+                        "asc",
+                        "desc"
+                    ]
+                },
+                "key": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "builtin",
+                        "field"
+                    ]
+                }
+            }
         },
         "usergroup.Role": {
             "type": "string",

@@ -28,6 +28,8 @@ type Tx struct {
 	EntityTemplate *EntityTemplateClient
 	// EntityType is the client for interacting with the EntityType builders.
 	EntityType *EntityTypeClient
+	// EntityView is the client for interacting with the EntityView builders.
+	EntityView *EntityViewClient
 	// Export is the client for interacting with the Export builders.
 	Export *ExportClient
 	// Group is the client for interacting with the Group builders.
@@ -187,6 +189,7 @@ func (tx *Tx) init() {
 	tx.EntityField = NewEntityFieldClient(tx.config)
 	tx.EntityTemplate = NewEntityTemplateClient(tx.config)
 	tx.EntityType = NewEntityTypeClient(tx.config)
+	tx.EntityView = NewEntityViewClient(tx.config)
 	tx.Export = NewExportClient(tx.config)
 	tx.Group = NewGroupClient(tx.config)
 	tx.GroupInvitationToken = NewGroupInvitationTokenClient(tx.config)

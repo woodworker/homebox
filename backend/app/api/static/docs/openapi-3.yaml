@@ -2072,6 +2072,106 @@ paths:
                       item:
                         type: object
                         additionalProperties: true
+  /v1/views:
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Entity Views
+      summary: Get All Entity Views
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/repo.EntityViewOut"
+    post:
+      security:
+        - Bearer: []
+      tags:
+        - Entity Views
+      summary: Create Entity View
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/repo.EntityViewCreate"
+        description: Entity View Data
+        required: true
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/repo.EntityViewOut"
+  "/v1/views/{id}":
+    get:
+      security:
+        - Bearer: []
+      tags:
+        - Entity Views
+      summary: Get Entity View
+      parameters:
+        - description: Entity View ID
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/repo.EntityViewOut"
+    put:
+      security:
+        - Bearer: []
+      tags:
+        - Entity Views
+      summary: Update Entity View
+      parameters:
+        - description: Entity View ID
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/repo.EntityViewUpdate"
+        description: Entity View Data
+        required: true
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/repo.EntityViewOut"
+    delete:
+      security:
+        - Bearer: []
+      tags:
+        - Entity Views
+      summary: Delete Entity View
+      parameters:
+        - description: Entity View ID
+          name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content
 servers:
   - url: /api
 components:
@@ -2588,6 +2688,46 @@ components:
           description: Group holds the value of the group edge.
           allOf:
             - $ref: "#/components/schemas/ent.Group"
+    ent.EntityView:
+      type: object
+      properties:
+        created_at:
+          description: CreatedAt holds the value of the "created_at" field.
+          type: string
+        edges:
+          description: >-
+            Edges holds the relations/edges for other nodes in the graph.
+
+            The values are being populated by the EntityViewQuery when eager-loading is set.
+          allOf:
+            - $ref: "#/components/schemas/ent.EntityViewEdges"
+        group_id:
+          description: GroupID holds the value of the "group_id" field.
+          type: string
+        id:
+          description: ID of the ent.
+          type: string
+        kind:
+          description: Kind holds the value of the "kind" field.
+          allOf:
+            - $ref: "#/components/schemas/entityview.Kind"
+        name:
+          description: Name holds the value of the "name" field.
+          type: string
+        table_config:
+          description: Settings for kind=table
+          allOf:
+            - $ref: "#/components/schemas/types.TableViewConfig"
+        updated_at:
+          description: UpdatedAt holds the value of the "updated_at" field.
+          type: string
+    ent.EntityViewEdges:
+      type: object
+      properties:
+        group:
+          description: Group holds the value of the group edge.
+          allOf:
+            - $ref: "#/components/schemas/ent.Group"
     ent.Export:
       type: object
       properties:
@@ -2680,6 +2820,11 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ent.EntityType"
+        entity_views:
+          description: EntityViews holds the value of the entity_views edge.
+          type: array
+          items:
+            $ref: "#/components/schemas/ent.EntityView"
         exports:
           description: Exports holds the value of the exports edge.
           type: array
@@ -3097,6 +3242,12 @@ components:
         - TypeNumber
         - TypeBoolean
         - TypeTime
+    entityview.Kind:
+      type: string
+      enum:
+        - table
+      x-enum-varnames:
+        - KindTable
     export.Kind:
       type: string
       enum:
@@ -3823,6 +3974,62 @@ components:
           type: string
         warrantyExpires:
           type: string
+    repo.EntityViewCreate:
+      type: object
+      required:
+        - kind
+        - name
+      properties:
+        kind:
+          type: string
+          enum:
+            - table
+        name:
+          type: string
+          maxLength: 255
+          minLength: 1
+        table:
+          allOf:
+            - $ref: "#/components/schemas/types.TableViewConfig"
+          nullable: true
+    repo.EntityViewOut:
+      type: object
+      properties:
+        createdAt:
+          type: string
+        id:
+          type: string
+        kind:
+          type: string
+        name:
+          type: string
+        table:
+          allOf:
+            - $ref: "#/components/schemas/types.TableViewConfig"
+          x-omitempty: true
+          nullable: true
+        updatedAt:
+          type: string
+    repo.EntityViewUpdate:
+      type: object
+      required:
+        - kind
+        - name
+      properties:
+        id:
+          type: string
+        kind:
+          type: string
+          enum:
+            - table
+        name:
+          type: string
+          maxLength: 255
+          minLength: 1
+        table:
+          allOf:
+            - $ref: "#/components/schemas/types.TableViewConfig"
+          nullable: true
     repo.ExportOut:
       type: object
       properties:
@@ -4296,6 +4503,55 @@ components:
         - TypeNumber
         - TypeBoolean
         - TypeTime
+    types.TableViewColumn:
+      type: object
+      required:
+        - key
+        - kind
+      properties:
+        key:
+          type: string
+          maxLength: 255
+        kind:
+          type: string
+          enum:
+            - builtin
+            - field
+    types.TableViewConfig:
+      type: object
+      required:
+        - columns
+      properties:
+        columns:
+          type: array
+          maxItems: 50
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/types.TableViewColumn"
+        sort:
+          allOf:
+            - $ref: "#/components/schemas/types.TableViewSort"
+          nullable: true
+    types.TableViewSort:
+      type: object
+      required:
+        - direction
+        - key
+        - kind
+      properties:
+        direction:
+          type: string
+          enum:
+            - asc
+            - desc
+        key:
+          type: string
+          maxLength: 255
+        kind:
+          type: string
+          enum:
+            - builtin
+            - field
     usergroup.Role:
       type: string
       enum:

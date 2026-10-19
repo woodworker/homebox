@@ -21,6 +21,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/predicate"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/tag"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/repo"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/types"
 )
 
 func tagInGroup(gid uuid.UUID) predicate.Tag {
@@ -70,6 +71,20 @@ func TestExportRoundTrip(t *testing.T) {
 	})
 	require.NoError(t, err)
 	_, err = tClient.Entity.UpdateOneID(item.ID).AddTagIDs(tg.ID).Save(ctx)
+	require.NoError(t, err)
+
+	// Table view with a JSON column config and sort.
+	view, err := tRepos.EntityViews.Create(ctx, src.ID, repo.EntityViewCreate{
+		Name: "Tools",
+		Kind: types.EntityViewKindTable,
+		Table: &types.TableViewConfig{
+			Columns: []types.TableViewColumn{
+				{Kind: types.TableViewColumnBuiltin, Key: "name"},
+				{Kind: types.TableViewColumnField, Key: "Voltage"},
+			},
+			Sort: &types.TableViewSort{Kind: types.TableViewColumnField, Key: "Voltage", Direction: "desc"},
+		},
+	})
 	require.NoError(t, err)
 
 	// Real attachment + a fabricated thumbnail row pointing at it.
@@ -181,6 +196,14 @@ func TestExportRoundTrip(t *testing.T) {
 	// PK). Names + relationship structure are what matters.
 	assert.NotEqual(t, item.ID, gotItem.ID, "import should remap PKs")
 	assert.NotEqual(t, tg.ID, tags[0].ID, "import should remap PKs")
+
+	gotViews, err := tRepos.EntityViews.GetAll(ctx, dst.ID)
+	require.NoError(t, err)
+	require.Len(t, gotViews, 1, "view must round-trip")
+	assert.NotEqual(t, view.ID, gotViews[0].ID, "import should remap PKs")
+	assert.Equal(t, view.Name, gotViews[0].Name)
+	assert.Equal(t, view.Kind, gotViews[0].Kind)
+	assert.Equal(t, view.Table, gotViews[0].Table)
 
 	// Attachment + thumbnail must both round-trip with the parent→thumbnail
 	// link intact and both blobs present at their new on-disk paths.
@@ -324,7 +347,7 @@ func TestCSVImportRejectsSelfParentRef(t *testing.T) {
 
 // TestIsGroupReadyForImport_BlocksUserCreatedRows asserts that the import
 // gate blocks not just on items but on user-created rows in any table the
-// import would wipe (tags, entity_templates, notifiers, custom entity_types,
+// import would wipe (tags, entity_templates, notifiers, entity_views, custom entity_types,
 // and custom locations beyond the seeded baseline). The pure-seed and
 // pure-empty cases must still pass.
 func TestIsGroupReadyForImport_BlocksUserCreatedRows(t *testing.T) {
@@ -394,6 +417,20 @@ func TestIsGroupReadyForImport_BlocksUserCreatedRows(t *testing.T) {
 		ready, err := tSvc.Exports.IsGroupReadyForImport(ctx, g.ID)
 		require.NoError(t, err)
 		assert.False(t, ready, "any notifier must block")
+	})
+
+	t.Run("view blocks", func(t *testing.T) {
+		g, err := tRepos.Groups.GroupCreate(ctx, "ready-tv-"+fk.Str(4), uuid.Nil)
+		require.NoError(t, err)
+		_, err = tRepos.EntityViews.Create(ctx, g.ID, repo.EntityViewCreate{
+			Name:  "v",
+			Kind:  types.EntityViewKindTable,
+			Table: &types.TableViewConfig{Columns: []types.TableViewColumn{{Kind: types.TableViewColumnBuiltin, Key: "name"}}},
+		})
+		require.NoError(t, err)
+		ready, err := tSvc.Exports.IsGroupReadyForImport(ctx, g.ID)
+		require.NoError(t, err)
+		assert.False(t, ready, "any view must block")
 	})
 
 	t.Run("template blocks", func(t *testing.T) {
