@@ -3163,6 +3163,22 @@ func (c *TagClient) QueryChildren(_m *Tag) *TagQuery {
 	return query
 }
 
+// QueryDefaultView queries the default_view edge of a Tag.
+func (c *TagClient) QueryDefaultView(_m *Tag) *EntityViewQuery {
+	query := (&EntityViewClient{config: c.config}).Query()
+	query.path = func(context.Context) (fromV *sql.Selector, _ error) {
+		id := _m.ID
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, id),
+			sqlgraph.To(entityview.Table, entityview.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, tag.DefaultViewTable, tag.DefaultViewColumn),
+		)
+		fromV = sqlgraph.Neighbors(_m.driver.Dialect(), step)
+		return fromV, nil
+	}
+	return query
+}
+
 // Hooks returns the client hooks.
 func (c *TagClient) Hooks() []Hook {
 	return c.hooks.Tag

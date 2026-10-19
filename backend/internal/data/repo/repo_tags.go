@@ -27,23 +27,25 @@ type (
 	// Tags can optionally have a parent to form hierarchical structures
 	// with a maximum depth of 5 levels.
 	TagCreate struct {
-		Name        string    `json:"name"        validate:"required,min=1,max=255"`
-		ParentID    uuid.UUID `json:"parentId"    extensions:"x-nullable"`
-		Description string    `json:"description" validate:"max=1000"`
-		Color       string    `json:"color"`
-		Icon        string    `json:"icon"        validate:"max=255"`
+		Name          string     `json:"name"          validate:"required,min=1,max=255"`
+		ParentID      uuid.UUID  `json:"parentId"      extensions:"x-nullable"`
+		Description   string     `json:"description"   validate:"max=1000"`
+		Color         string     `json:"color"`
+		Icon          string     `json:"icon"          validate:"max=255"`
+		DefaultViewID *uuid.UUID `json:"defaultViewId" extensions:"x-nullable"`
 	}
 
 	// TagUpdate represents the input data for updating an existing tag.
 	// All fields can be modified, including moving the tag to a different
 	// parent (while maintaining hierarchy constraints and preventing cycles).
 	TagUpdate struct {
-		ID          uuid.UUID `json:"id"`
-		ParentID    uuid.UUID `json:"parentId"    extensions:"x-nullable"`
-		Name        string    `json:"name"        validate:"required,min=1,max=255"`
-		Description string    `json:"description" validate:"max=1000"`
-		Color       string    `json:"color"`
-		Icon        string    `json:"icon"        validate:"max=255"`
+		ID            uuid.UUID  `json:"id"`
+		ParentID      uuid.UUID  `json:"parentId"      extensions:"x-nullable"`
+		Name          string     `json:"name"          validate:"required,min=1,max=255"`
+		Description   string     `json:"description"   validate:"max=1000"`
+		Color         string     `json:"color"`
+		Icon          string     `json:"icon"          validate:"max=255"`
+		DefaultViewID *uuid.UUID `json:"defaultViewId" extensions:"x-nullable"`
 	}
 
 	// TagSummary provides a lightweight representation of a tag without
@@ -64,8 +66,9 @@ type (
 	// (empty slice if the tag has no children).
 	TagOut struct {
 		TagSummary
-		Parent   *TagSummary  `json:"parent,omitempty" extensions:"x-nullable"`
-		Children []TagSummary `json:"children"`
+		Parent        *TagSummary  `json:"parent,omitempty"        extensions:"x-nullable"`
+		Children      []TagSummary `json:"children"`
+		DefaultViewID *uuid.UUID   `json:"defaultViewId,omitempty" extensions:"x-nullable,x-omitempty"`
 	}
 )
 
@@ -112,9 +115,10 @@ func mapTagOut(tag *ent.Tag) TagOut {
 	}
 
 	return TagOut{
-		TagSummary: mapTagSummary(tag),
-		Parent:     parent,
-		Children:   children,
+		TagSummary:    mapTagSummary(tag),
+		Parent:        parent,
+		Children:      children,
+		DefaultViewID: tag.DefaultViewID,
 	}
 }
 
@@ -351,12 +355,19 @@ func (r *TagRepository) Create(ctx context.Context, groupID uuid.UUID, data TagC
 		}
 	}
 
+	if data.DefaultViewID != nil {
+		if err := assertEntityViewInGroup(ctx, r.db.EntityView, groupID, *data.DefaultViewID); err != nil {
+			return TagOut{}, err
+		}
+	}
+
 	q := r.db.Tag.Create().
 		SetName(data.Name).
 		SetDescription(data.Description).
 		SetColor(data.Color).
 		SetIcon(data.Icon).
-		SetGroupID(groupID)
+		SetGroupID(groupID).
+		SetNillableDefaultViewID(data.DefaultViewID)
 
 	if data.ParentID != uuid.Nil {
 		q.SetParentID(data.ParentID)
@@ -425,12 +436,24 @@ func (r *TagRepository) update(ctx context.Context, groupID uuid.UUID, data TagU
 		}
 	}
 
+	if data.DefaultViewID != nil {
+		if err := assertEntityViewInGroup(ctx, r.db.EntityView, groupID, *data.DefaultViewID); err != nil {
+			return 0, err
+		}
+	}
+
 	q := r.db.Tag.Update().
 		Where(where...).
 		SetName(data.Name).
 		SetDescription(data.Description).
 		SetColor(data.Color).
 		SetIcon(data.Icon)
+
+	if data.DefaultViewID != nil {
+		q.SetDefaultViewID(*data.DefaultViewID)
+	} else {
+		q.ClearDefaultViewID()
+	}
 
 	if data.ParentID != uuid.Nil {
 		q.SetParentID(data.ParentID)

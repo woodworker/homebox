@@ -3027,6 +3027,9 @@ components:
         created_at:
           description: CreatedAt holds the value of the "created_at" field.
           type: string
+        default_view_id:
+          description: View the tag page starts with
+          type: string
         description:
           description: Description holds the value of the "description" field.
           type: string
@@ -3057,6 +3060,10 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/ent.Tag"
+        default_view:
+          description: DefaultView holds the value of the default_view edge.
+          allOf:
+            - $ref: "#/components/schemas/ent.EntityView"
         entities:
           description: Entities holds the value of the entities edge.
           type: array
@@ -4276,6 +4283,9 @@ components:
       properties:
         color:
           type: string
+        defaultViewId:
+          type: string
+          nullable: true
         description:
           type: string
           maxLength: 1000
@@ -4300,6 +4310,10 @@ components:
           type: string
         createdAt:
           type: string
+        defaultViewId:
+          type: string
+          x-omitempty: true
+          nullable: true
         description:
           type: string
         icon:
@@ -4344,6 +4358,9 @@ components:
       properties:
         color:
           type: string
+        defaultViewId:
+          type: string
+          nullable: true
         description:
           type: string
           maxLength: 1000

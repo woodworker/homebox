@@ -363,6 +363,7 @@
         "tag": {
             "create_modal": {
                 "tag_color": "Tag Color",
+                "tag_default_view": "Default view",
                 "tag_description": "Tag Description",
                 "tag_icon": "Tag Icon",
                 "tag_name": "Tag Name",

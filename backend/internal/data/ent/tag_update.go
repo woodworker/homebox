@@ -13,6 +13,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entity"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityview"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/predicate"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/tag"
@@ -111,6 +112,26 @@ func (_u *TagUpdate) ClearIcon() *TagUpdate {
 	return _u
 }
 
+// SetDefaultViewID sets the "default_view_id" field.
+func (_u *TagUpdate) SetDefaultViewID(v uuid.UUID) *TagUpdate {
+	_u.mutation.SetDefaultViewID(v)
+	return _u
+}
+
+// SetNillableDefaultViewID sets the "default_view_id" field if the given value is not nil.
+func (_u *TagUpdate) SetNillableDefaultViewID(v *uuid.UUID) *TagUpdate {
+	if v != nil {
+		_u.SetDefaultViewID(*v)
+	}
+	return _u
+}
+
+// ClearDefaultViewID clears the value of the "default_view_id" field.
+func (_u *TagUpdate) ClearDefaultViewID() *TagUpdate {
+	_u.mutation.ClearDefaultViewID()
+	return _u
+}
+
 // SetGroupID sets the "group" edge to the Group entity by ID.
 func (_u *TagUpdate) SetGroupID(id uuid.UUID) *TagUpdate {
 	_u.mutation.SetGroupID(id)
@@ -171,6 +192,11 @@ func (_u *TagUpdate) AddChildren(v ...*Tag) *TagUpdate {
 	return _u.AddChildIDs(ids...)
 }
 
+// SetDefaultView sets the "default_view" edge to the EntityView entity.
+func (_u *TagUpdate) SetDefaultView(v *EntityView) *TagUpdate {
+	return _u.SetDefaultViewID(v.ID)
+}
+
 // Mutation returns the TagMutation object of the builder.
 func (_u *TagUpdate) Mutation() *TagMutation {
 	return _u.mutation
@@ -228,6 +254,12 @@ func (_u *TagUpdate) RemoveChildren(v ...*Tag) *TagUpdate {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveChildIDs(ids...)
+}
+
+// ClearDefaultView clears the "default_view" edge to the EntityView entity.
+func (_u *TagUpdate) ClearDefaultView() *TagUpdate {
+	_u.mutation.ClearDefaultView()
+	return _u
 }
 
 // Save executes the query and returns the number of nodes affected by the update operation.
@@ -478,6 +510,35 @@ func (_u *TagUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	if _u.mutation.DefaultViewCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tag.DefaultViewTable,
+			Columns: []string{tag.DefaultViewColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entityview.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DefaultViewIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tag.DefaultViewTable,
+			Columns: []string{tag.DefaultViewColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entityview.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
 	if _node, err = sqlgraph.UpdateNodes(ctx, _u.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{tag.Label}
@@ -578,6 +639,26 @@ func (_u *TagUpdateOne) ClearIcon() *TagUpdateOne {
 	return _u
 }
 
+// SetDefaultViewID sets the "default_view_id" field.
+func (_u *TagUpdateOne) SetDefaultViewID(v uuid.UUID) *TagUpdateOne {
+	_u.mutation.SetDefaultViewID(v)
+	return _u
+}
+
+// SetNillableDefaultViewID sets the "default_view_id" field if the given value is not nil.
+func (_u *TagUpdateOne) SetNillableDefaultViewID(v *uuid.UUID) *TagUpdateOne {
+	if v != nil {
+		_u.SetDefaultViewID(*v)
+	}
+	return _u
+}
+
+// ClearDefaultViewID clears the value of the "default_view_id" field.
+func (_u *TagUpdateOne) ClearDefaultViewID() *TagUpdateOne {
+	_u.mutation.ClearDefaultViewID()
+	return _u
+}
+
 // SetGroupID sets the "group" edge to the Group entity by ID.
 func (_u *TagUpdateOne) SetGroupID(id uuid.UUID) *TagUpdateOne {
 	_u.mutation.SetGroupID(id)
@@ -638,6 +719,11 @@ func (_u *TagUpdateOne) AddChildren(v ...*Tag) *TagUpdateOne {
 	return _u.AddChildIDs(ids...)
 }
 
+// SetDefaultView sets the "default_view" edge to the EntityView entity.
+func (_u *TagUpdateOne) SetDefaultView(v *EntityView) *TagUpdateOne {
+	return _u.SetDefaultViewID(v.ID)
+}
+
 // Mutation returns the TagMutation object of the builder.
 func (_u *TagUpdateOne) Mutation() *TagMutation {
 	return _u.mutation
@@ -695,6 +781,12 @@ func (_u *TagUpdateOne) RemoveChildren(v ...*Tag) *TagUpdateOne {
 		ids[i] = v[i].ID
 	}
 	return _u.RemoveChildIDs(ids...)
+}
+
+// ClearDefaultView clears the "default_view" edge to the EntityView entity.
+func (_u *TagUpdateOne) ClearDefaultView() *TagUpdateOne {
+	_u.mutation.ClearDefaultView()
+	return _u
 }
 
 // Where appends a list predicates to the TagUpdate builder.
@@ -968,6 +1060,35 @@ func (_u *TagUpdateOne) sqlSave(ctx context.Context) (_node *Tag, err error) {
 			Bidi:    false,
 			Target: &sqlgraph.EdgeTarget{
 				IDSpec: sqlgraph.NewFieldSpec(tag.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_spec.Edges.Add = append(_spec.Edges.Add, edge)
+	}
+	if _u.mutation.DefaultViewCleared() {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tag.DefaultViewTable,
+			Columns: []string{tag.DefaultViewColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entityview.FieldID, field.TypeUUID),
+			},
+		}
+		_spec.Edges.Clear = append(_spec.Edges.Clear, edge)
+	}
+	if nodes := _u.mutation.DefaultViewIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tag.DefaultViewTable,
+			Columns: []string{tag.DefaultViewColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entityview.FieldID, field.TypeUUID),
 			},
 		}
 		for _, k := range nodes {

@@ -86,6 +86,11 @@ func Icon(v string) predicate.Tag {
 	return predicate.Tag(sql.FieldEQ(FieldIcon, v))
 }
 
+// DefaultViewID applies equality check predicate on the "default_view_id" field. It's identical to DefaultViewIDEQ.
+func DefaultViewID(v uuid.UUID) predicate.Tag {
+	return predicate.Tag(sql.FieldEQ(FieldDefaultViewID, v))
+}
+
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.
 func CreatedAtEQ(v time.Time) predicate.Tag {
 	return predicate.Tag(sql.FieldEQ(FieldCreatedAt, v))
@@ -456,6 +461,36 @@ func IconContainsFold(v string) predicate.Tag {
 	return predicate.Tag(sql.FieldContainsFold(FieldIcon, v))
 }
 
+// DefaultViewIDEQ applies the EQ predicate on the "default_view_id" field.
+func DefaultViewIDEQ(v uuid.UUID) predicate.Tag {
+	return predicate.Tag(sql.FieldEQ(FieldDefaultViewID, v))
+}
+
+// DefaultViewIDNEQ applies the NEQ predicate on the "default_view_id" field.
+func DefaultViewIDNEQ(v uuid.UUID) predicate.Tag {
+	return predicate.Tag(sql.FieldNEQ(FieldDefaultViewID, v))
+}
+
+// DefaultViewIDIn applies the In predicate on the "default_view_id" field.
+func DefaultViewIDIn(vs ...uuid.UUID) predicate.Tag {
+	return predicate.Tag(sql.FieldIn(FieldDefaultViewID, vs...))
+}
+
+// DefaultViewIDNotIn applies the NotIn predicate on the "default_view_id" field.
+func DefaultViewIDNotIn(vs ...uuid.UUID) predicate.Tag {
+	return predicate.Tag(sql.FieldNotIn(FieldDefaultViewID, vs...))
+}
+
+// DefaultViewIDIsNil applies the IsNil predicate on the "default_view_id" field.
+func DefaultViewIDIsNil() predicate.Tag {
+	return predicate.Tag(sql.FieldIsNull(FieldDefaultViewID))
+}
+
+// DefaultViewIDNotNil applies the NotNil predicate on the "default_view_id" field.
+func DefaultViewIDNotNil() predicate.Tag {
+	return predicate.Tag(sql.FieldNotNull(FieldDefaultViewID))
+}
+
 // HasGroup applies the HasEdge predicate on the "group" edge.
 func HasGroup() predicate.Tag {
 	return predicate.Tag(func(s *sql.Selector) {
@@ -540,6 +575,29 @@ func HasChildren() predicate.Tag {
 func HasChildrenWith(preds ...predicate.Tag) predicate.Tag {
 	return predicate.Tag(func(s *sql.Selector) {
 		step := newChildrenStep()
+		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
+			for _, p := range preds {
+				p(s)
+			}
+		})
+	})
+}
+
+// HasDefaultView applies the HasEdge predicate on the "default_view" edge.
+func HasDefaultView() predicate.Tag {
+	return predicate.Tag(func(s *sql.Selector) {
+		step := sqlgraph.NewStep(
+			sqlgraph.From(Table, FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, DefaultViewTable, DefaultViewColumn),
+		)
+		sqlgraph.HasNeighbors(s, step)
+	})
+}
+
+// HasDefaultViewWith applies the HasEdge predicate on the "default_view" edge with a given conditions (other predicates).
+func HasDefaultViewWith(preds ...predicate.EntityView) predicate.Tag {
+	return predicate.Tag(func(s *sql.Selector) {
+		step := newDefaultViewStep()
 		sqlgraph.HasNeighborsWith(s, step, func(s *sql.Selector) {
 			for _, p := range preds {
 				p(s)

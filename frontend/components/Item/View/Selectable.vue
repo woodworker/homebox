@@ -21,6 +21,8 @@
     pagination?: Pagination;
     disableSort?: boolean;
     title?: string;
+    // Table view to start with, e.g. a tag's default view; falls back to the default columns.
+    defaultViewId?: string | null;
   }>();
 
   const emit = defineEmits<{
@@ -34,16 +36,14 @@
   onMounted(() => viewStore.ensureFetched());
   const tableViews = computed(() => viewStore.views.filter(v => v.kind === "table"));
 
-  // The selected view only applies to the current page and resets on
-  // navigation, so a view picked for one tag doesn't carry over to the next.
+  // The selected view only applies to the current page: it starts from
+  // defaultViewId and resets on navigation, so a view picked for one tag
+  // doesn't carry over to the next.
   const route = useRoute();
-  const selectedViewId = ref<string | null>(null);
-  watch(
-    () => route.path,
-    () => {
-      selectedViewId.value = null;
-    }
-  );
+  const selectedViewId = ref<string | null>(props.defaultViewId ?? null);
+  watch([() => route.path, () => props.defaultViewId], () => {
+    selectedViewId.value = props.defaultViewId ?? null;
+  });
   const activeView = computed(() => tableViews.value.find(v => v.id === selectedViewId.value) ?? null);
 
   const columns = computed(() =>

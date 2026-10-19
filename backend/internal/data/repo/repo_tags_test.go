@@ -7,6 +7,8 @@ import (
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/types"
 )
 
 func tagFactory() TagCreate {
@@ -319,4 +321,44 @@ func TestTagRepository_Update_RemoveParent(t *testing.T) {
 
 	_ = tRepos.Tags.delete(context.Background(), child.ID)
 	_ = tRepos.Tags.delete(context.Background(), parent.ID)
+}
+
+func TestTagRepository_DefaultView(t *testing.T) {
+	ctx := context.Background()
+
+	v, err := tRepos.EntityViews.Create(ctx, tGroup.ID, tableView("Filament",
+		types.TableViewColumn{Kind: types.TableViewColumnBuiltin, Key: "name"},
+	))
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.EntityViews.Delete(ctx, tGroup.ID, v.ID) })
+
+	tg, err := tRepos.Tags.Create(ctx, tGroup.ID, TagCreate{Name: fk.Str(10), DefaultViewID: &v.ID})
+	require.NoError(t, err)
+	t.Cleanup(func() { _ = tRepos.Tags.DeleteByGroup(ctx, tGroup.ID, tg.ID) })
+	require.NotNil(t, tg.DefaultViewID)
+	assert.Equal(t, v.ID, *tg.DefaultViewID)
+
+	// Update without a default view clears it.
+	tg, err = tRepos.Tags.UpdateByGroup(ctx, tGroup.ID, TagUpdate{ID: tg.ID, Name: tg.Name})
+	require.NoError(t, err)
+	assert.Nil(t, tg.DefaultViewID)
+
+	// A view of another group is reported as not found.
+	otherGroup, err := tRepos.Groups.GroupCreate(ctx, "tags-other-"+fk.Str(4), uuid.Nil)
+	require.NoError(t, err)
+	foreign, err := tRepos.EntityViews.Create(ctx, otherGroup.ID, tableView("foreign",
+		types.TableViewColumn{Kind: types.TableViewColumnBuiltin, Key: "name"},
+	))
+	require.NoError(t, err)
+	_, err = tRepos.Tags.UpdateByGroup(ctx, tGroup.ID, TagUpdate{ID: tg.ID, Name: tg.Name, DefaultViewID: &foreign.ID})
+	require.Error(t, err)
+	assert.True(t, ent.IsNotFound(err))
+
+	// Deleting the view clears the tag's default view.
+	tg, err = tRepos.Tags.UpdateByGroup(ctx, tGroup.ID, TagUpdate{ID: tg.ID, Name: tg.Name, DefaultViewID: &v.ID})
+	require.NoError(t, err)
+	require.NoError(t, tRepos.EntityViews.Delete(ctx, tGroup.ID, v.ID))
+	tg, err = tRepos.Tags.GetOneByGroup(ctx, tGroup.ID, tg.ID)
+	require.NoError(t, err)
+	assert.Nil(t, tg.DefaultViewID)
 }

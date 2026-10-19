@@ -601,6 +601,8 @@ export interface EntTag {
   color: string;
   /** CreatedAt holds the value of the "created_at" field. */
   created_at: string;
+  /** View the tag page starts with */
+  default_view_id: string;
   /** Description holds the value of the "description" field. */
   description: string;
   /**
@@ -621,6 +623,8 @@ export interface EntTag {
 export interface EntTagEdges {
   /** Children holds the value of the children edge. */
   children: EntTag[];
+  /** DefaultView holds the value of the default_view edge. */
+  default_view: EntEntityView;
   /** Entities holds the value of the entities edge. */
   entities: EntEntity[];
   /** Group holds the value of the group edge. */
@@ -1272,6 +1276,7 @@ export interface PaginationResultEntitySummary {
 
 export interface TagCreate {
   color: string;
+  defaultViewId?: string | null;
   /** @maxLength 1000 */
   description: string;
   /** @maxLength 255 */
@@ -1288,6 +1293,7 @@ export interface TagOut {
   children: TagSummary[];
   color: string;
   createdAt: Date | string;
+  defaultViewId?: string | null;
   description: string;
   icon: string;
   id: string;
@@ -1310,6 +1316,7 @@ export interface TagSummary {
 
 export interface TagUpdate {
   color: string;
+  defaultViewId?: string | null;
   /** @maxLength 1000 */
   description: string;
   /** @maxLength 255 */

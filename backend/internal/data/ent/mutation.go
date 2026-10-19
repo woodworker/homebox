@@ -14516,29 +14516,31 @@ func (m *PasswordResetTokensMutation) ResetEdge(name string) error {
 // TagMutation represents an operation that mutates the Tag nodes in the graph.
 type TagMutation struct {
 	config
-	op              Op
-	typ             string
-	id              *uuid.UUID
-	created_at      *time.Time
-	updated_at      *time.Time
-	name            *string
-	description     *string
-	color           *string
-	icon            *string
-	clearedFields   map[string]struct{}
-	group           *uuid.UUID
-	clearedgroup    bool
-	entities        map[uuid.UUID]struct{}
-	removedentities map[uuid.UUID]struct{}
-	clearedentities bool
-	parent          *uuid.UUID
-	clearedparent   bool
-	children        map[uuid.UUID]struct{}
-	removedchildren map[uuid.UUID]struct{}
-	clearedchildren bool
-	done            bool
-	oldValue        func(context.Context) (*Tag, error)
-	predicates      []predicate.Tag
+	op                  Op
+	typ                 string
+	id                  *uuid.UUID
+	created_at          *time.Time
+	updated_at          *time.Time
+	name                *string
+	description         *string
+	color               *string
+	icon                *string
+	clearedFields       map[string]struct{}
+	group               *uuid.UUID
+	clearedgroup        bool
+	entities            map[uuid.UUID]struct{}
+	removedentities     map[uuid.UUID]struct{}
+	clearedentities     bool
+	parent              *uuid.UUID
+	clearedparent       bool
+	children            map[uuid.UUID]struct{}
+	removedchildren     map[uuid.UUID]struct{}
+	clearedchildren     bool
+	default_view        *uuid.UUID
+	cleareddefault_view bool
+	done                bool
+	oldValue            func(context.Context) (*Tag, error)
+	predicates          []predicate.Tag
 }
 
 var _ ent.Mutation = (*TagMutation)(nil)
@@ -14900,6 +14902,55 @@ func (m *TagMutation) ResetIcon() {
 	delete(m.clearedFields, tag.FieldIcon)
 }
 
+// SetDefaultViewID sets the "default_view_id" field.
+func (m *TagMutation) SetDefaultViewID(u uuid.UUID) {
+	m.default_view = &u
+}
+
+// DefaultViewID returns the value of the "default_view_id" field in the mutation.
+func (m *TagMutation) DefaultViewID() (r uuid.UUID, exists bool) {
+	v := m.default_view
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldDefaultViewID returns the old "default_view_id" field's value of the Tag entity.
+// If the Tag object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *TagMutation) OldDefaultViewID(ctx context.Context) (v *uuid.UUID, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldDefaultViewID is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldDefaultViewID requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldDefaultViewID: %w", err)
+	}
+	return oldValue.DefaultViewID, nil
+}
+
+// ClearDefaultViewID clears the value of the "default_view_id" field.
+func (m *TagMutation) ClearDefaultViewID() {
+	m.default_view = nil
+	m.clearedFields[tag.FieldDefaultViewID] = struct{}{}
+}
+
+// DefaultViewIDCleared returns if the "default_view_id" field was cleared in this mutation.
+func (m *TagMutation) DefaultViewIDCleared() bool {
+	_, ok := m.clearedFields[tag.FieldDefaultViewID]
+	return ok
+}
+
+// ResetDefaultViewID resets all changes to the "default_view_id" field.
+func (m *TagMutation) ResetDefaultViewID() {
+	m.default_view = nil
+	delete(m.clearedFields, tag.FieldDefaultViewID)
+}
+
 // SetGroupID sets the "group" edge to the Group entity by id.
 func (m *TagMutation) SetGroupID(id uuid.UUID) {
 	m.group = &id
@@ -15086,6 +15137,33 @@ func (m *TagMutation) ResetChildren() {
 	m.removedchildren = nil
 }
 
+// ClearDefaultView clears the "default_view" edge to the EntityView entity.
+func (m *TagMutation) ClearDefaultView() {
+	m.cleareddefault_view = true
+	m.clearedFields[tag.FieldDefaultViewID] = struct{}{}
+}
+
+// DefaultViewCleared reports if the "default_view" edge to the EntityView entity was cleared.
+func (m *TagMutation) DefaultViewCleared() bool {
+	return m.DefaultViewIDCleared() || m.cleareddefault_view
+}
+
+// DefaultViewIDs returns the "default_view" edge IDs in the mutation.
+// Note that IDs always returns len(IDs) <= 1 for unique edges, and you should use
+// DefaultViewID instead. It exists only for internal usage by the builders.
+func (m *TagMutation) DefaultViewIDs() (ids []uuid.UUID) {
+	if id := m.default_view; id != nil {
+		ids = append(ids, *id)
+	}
+	return
+}
+
+// ResetDefaultView resets all changes to the "default_view" edge.
+func (m *TagMutation) ResetDefaultView() {
+	m.default_view = nil
+	m.cleareddefault_view = false
+}
+
 // Where appends a list predicates to the TagMutation builder.
 func (m *TagMutation) Where(ps ...predicate.Tag) {
 	m.predicates = append(m.predicates, ps...)
@@ -15120,7 +15198,7 @@ func (m *TagMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *TagMutation) Fields() []string {
-	fields := make([]string, 0, 6)
+	fields := make([]string, 0, 7)
 	if m.created_at != nil {
 		fields = append(fields, tag.FieldCreatedAt)
 	}
@@ -15138,6 +15216,9 @@ func (m *TagMutation) Fields() []string {
 	}
 	if m.icon != nil {
 		fields = append(fields, tag.FieldIcon)
+	}
+	if m.default_view != nil {
+		fields = append(fields, tag.FieldDefaultViewID)
 	}
 	return fields
 }
@@ -15159,6 +15240,8 @@ func (m *TagMutation) Field(name string) (ent.Value, bool) {
 		return m.Color()
 	case tag.FieldIcon:
 		return m.Icon()
+	case tag.FieldDefaultViewID:
+		return m.DefaultViewID()
 	}
 	return nil, false
 }
@@ -15180,6 +15263,8 @@ func (m *TagMutation) OldField(ctx context.Context, name string) (ent.Value, err
 		return m.OldColor(ctx)
 	case tag.FieldIcon:
 		return m.OldIcon(ctx)
+	case tag.FieldDefaultViewID:
+		return m.OldDefaultViewID(ctx)
 	}
 	return nil, fmt.Errorf("unknown Tag field %s", name)
 }
@@ -15231,6 +15316,13 @@ func (m *TagMutation) SetField(name string, value ent.Value) error {
 		}
 		m.SetIcon(v)
 		return nil
+	case tag.FieldDefaultViewID:
+		v, ok := value.(uuid.UUID)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetDefaultViewID(v)
+		return nil
 	}
 	return fmt.Errorf("unknown Tag field %s", name)
 }
@@ -15270,6 +15362,9 @@ func (m *TagMutation) ClearedFields() []string {
 	if m.FieldCleared(tag.FieldIcon) {
 		fields = append(fields, tag.FieldIcon)
 	}
+	if m.FieldCleared(tag.FieldDefaultViewID) {
+		fields = append(fields, tag.FieldDefaultViewID)
+	}
 	return fields
 }
 
@@ -15292,6 +15387,9 @@ func (m *TagMutation) ClearField(name string) error {
 		return nil
 	case tag.FieldIcon:
 		m.ClearIcon()
+		return nil
+	case tag.FieldDefaultViewID:
+		m.ClearDefaultViewID()
 		return nil
 	}
 	return fmt.Errorf("unknown Tag nullable field %s", name)
@@ -15319,13 +15417,16 @@ func (m *TagMutation) ResetField(name string) error {
 	case tag.FieldIcon:
 		m.ResetIcon()
 		return nil
+	case tag.FieldDefaultViewID:
+		m.ResetDefaultViewID()
+		return nil
 	}
 	return fmt.Errorf("unknown Tag field %s", name)
 }
 
 // AddedEdges returns all edge names that were set/added in this mutation.
 func (m *TagMutation) AddedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.group != nil {
 		edges = append(edges, tag.EdgeGroup)
 	}
@@ -15337,6 +15438,9 @@ func (m *TagMutation) AddedEdges() []string {
 	}
 	if m.children != nil {
 		edges = append(edges, tag.EdgeChildren)
+	}
+	if m.default_view != nil {
+		edges = append(edges, tag.EdgeDefaultView)
 	}
 	return edges
 }
@@ -15365,13 +15469,17 @@ func (m *TagMutation) AddedIDs(name string) []ent.Value {
 			ids = append(ids, id)
 		}
 		return ids
+	case tag.EdgeDefaultView:
+		if id := m.default_view; id != nil {
+			return []ent.Value{*id}
+		}
 	}
 	return nil
 }
 
 // RemovedEdges returns all edge names that were removed in this mutation.
 func (m *TagMutation) RemovedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.removedentities != nil {
 		edges = append(edges, tag.EdgeEntities)
 	}
@@ -15403,7 +15511,7 @@ func (m *TagMutation) RemovedIDs(name string) []ent.Value {
 
 // ClearedEdges returns all edge names that were cleared in this mutation.
 func (m *TagMutation) ClearedEdges() []string {
-	edges := make([]string, 0, 4)
+	edges := make([]string, 0, 5)
 	if m.clearedgroup {
 		edges = append(edges, tag.EdgeGroup)
 	}
@@ -15415,6 +15523,9 @@ func (m *TagMutation) ClearedEdges() []string {
 	}
 	if m.clearedchildren {
 		edges = append(edges, tag.EdgeChildren)
+	}
+	if m.cleareddefault_view {
+		edges = append(edges, tag.EdgeDefaultView)
 	}
 	return edges
 }
@@ -15431,6 +15542,8 @@ func (m *TagMutation) EdgeCleared(name string) bool {
 		return m.clearedparent
 	case tag.EdgeChildren:
 		return m.clearedchildren
+	case tag.EdgeDefaultView:
+		return m.cleareddefault_view
 	}
 	return false
 }
@@ -15444,6 +15557,9 @@ func (m *TagMutation) ClearEdge(name string) error {
 		return nil
 	case tag.EdgeParent:
 		m.ClearParent()
+		return nil
+	case tag.EdgeDefaultView:
+		m.ClearDefaultView()
 		return nil
 	}
 	return fmt.Errorf("unknown Tag unique edge %s", name)
@@ -15464,6 +15580,9 @@ func (m *TagMutation) ResetEdge(name string) error {
 		return nil
 	case tag.EdgeChildren:
 		m.ResetChildren()
+		return nil
+	case tag.EdgeDefaultView:
+		m.ResetDefaultView()
 		return nil
 	}
 	return fmt.Errorf("unknown Tag edge %s", name)

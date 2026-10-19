@@ -63,4 +63,17 @@ describe("basic view workflows", () => {
     });
     expect(result.status).toBe(422);
   });
+
+  test("a tag's default view is cleared when the view is deleted", async () => {
+    const { client } = await factories.client.singleUse();
+
+    const { data: view } = await client.views.create(tableView());
+    const { data: tag } = await client.tags.create({ ...factories.tag(), defaultViewId: view.id });
+    expect(tag.defaultViewId).toBe(view.id);
+
+    await client.views.delete(view.id);
+
+    const { data: after } = await client.tags.get(tag.id);
+    expect(after.defaultViewId).toBeFalsy();
+  });
 });

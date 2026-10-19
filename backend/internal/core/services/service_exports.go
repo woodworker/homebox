@@ -109,7 +109,7 @@ type tableSpec struct {
 // entities.entity_location_entities, tags.tag_children,
 // attachments.attachment_thumbnail) and forward-circular FKs
 // (entity_types.entity_type_default_template,
-// entity_templates.entity_template_location) live in deferCols so the first
+// entity_templates.entity_template_location, tags.default_view_id) live in deferCols so the first
 // INSERT pass can succeed; the second pass patches them with remapped IDs.
 //
 // Known gap: entity_templates.default_tag_ids is a JSON list of tag UUIDs.
@@ -142,7 +142,10 @@ var exportTables = []tableSpec{
 		scope:     "group_tags = ?",
 		pkCol:     "id",
 		groupCols: []string{"group_tags"},
-		deferCols: map[string]string{"tag_children": "tags"},
+		deferCols: map[string]string{
+			"tag_children":    "tags",
+			"default_view_id": "entity_views",
+		},
 	},
 	{
 		name:      entitiesTable,

@@ -86,6 +86,8 @@ func TestExportRoundTrip(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
+	_, err = tClient.Tag.UpdateOneID(tg.ID).SetDefaultViewID(view.ID).Save(ctx)
+	require.NoError(t, err)
 
 	// Real attachment + a fabricated thumbnail row pointing at it.
 	// This is the scenario that broke before: the thumbnail row has
@@ -204,6 +206,8 @@ func TestExportRoundTrip(t *testing.T) {
 	assert.Equal(t, view.Name, gotViews[0].Name)
 	assert.Equal(t, view.Kind, gotViews[0].Kind)
 	assert.Equal(t, view.Table, gotViews[0].Table)
+	require.NotNil(t, allTags[0].DefaultViewID, "tag default view must round-trip")
+	assert.Equal(t, gotViews[0].ID, *allTags[0].DefaultViewID, "tag default view must point at the remapped view")
 
 	// Attachment + thumbnail must both round-trip with the parent→thumbnail
 	// link intact and both blobs present at their new on-disk paths.

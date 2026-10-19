@@ -24,6 +24,8 @@
   import ItemViewSelectable from "~/components/Item/View/Selectable.vue";
   import TagSingleSelector from "~/components/Tag/SingleSelector.vue";
   import TagChip from "~/components/Tag/Chip.vue";
+  import { Label } from "@/components/ui/label";
+  import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
   import type { TagOut } from "~~/lib/api/types/data-contracts";
   import { useTagStore } from "~/stores/tags";
 
@@ -72,12 +74,19 @@
   }
 
   const updating = ref(false);
+
+  // Table views the tag page can start with. Sentinel because the select can't hold null.
+  const NO_VIEW = "__none";
+  const viewStore = useViewStore();
+  const tableViews = computed(() => viewStore.views.filter(v => v.kind === "table"));
+
   const updateData = reactive({
     name: "",
     description: "",
     color: "",
     icon: "",
     parentTag: null as TagOut | null,
+    defaultViewId: NO_VIEW,
   });
 
   function wouldCreateCircular(potentialParent: TagOut, currentTagId: string): boolean {
@@ -151,6 +160,8 @@
     updateData.description = tag.value?.description || "";
     updateData.color = "";
     updateData.icon = tag.value?.icon || "";
+    updateData.defaultViewId = tag.value?.defaultViewId ?? NO_VIEW;
+    viewStore.ensureFetched();
     if (tag.value?.parent) {
       const parent = tagStore.tags.find(t => t.id === tag.value?.parentId);
       updateData.parentTag = parent || null;
@@ -173,6 +184,7 @@
       color: updateData.color,
       icon: updateData.icon,
       parentId: updateData.parentTag?.id,
+      defaultViewId: updateData.defaultViewId === NO_VIEW ? null : updateData.defaultViewId,
     });
 
     if (error) {
@@ -252,6 +264,18 @@
           :starting-color="tag.color"
         />
         <IconSelector v-model="updateData.icon" :label="$t('components.tag.create_modal.tag_icon')" />
+        <div class="flex flex-col gap-1">
+          <Label class="px-1">{{ $t("components.tag.create_modal.tag_default_view") }}</Label>
+          <Select v-model="updateData.defaultViewId">
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem :value="NO_VIEW">{{ $t("components.item.view.selectable.table") }}</SelectItem>
+              <SelectItem v-for="v in tableViews" :key="v.id" :value="v.id">{{ v.name }}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
         <DialogFooter>
           <Button type="submit" :loading="updating"> {{ $t("global.update") }} </Button>
         </DialogFooter>
@@ -314,7 +338,7 @@
       <Markdown v-if="tag && tag.description" class="mt-3 text-base" :source="tag.description" />
     </Card>
     <section v-if="tag && items">
-      <ItemViewSelectable :items="items.items" @refresh="refreshItemList" />
+      <ItemViewSelectable :items="items.items" :default-view-id="tag.defaultViewId" @refresh="refreshItemList" />
     </section>
   </BaseContainer>
 </template>

@@ -8,6 +8,7 @@ import (
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entity"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytemplate"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entitytype"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityview"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/tag"
 )
@@ -80,6 +81,23 @@ func assertEntityTemplateInGroup(ctx context.Context, c *ent.EntityTemplateClien
 	}
 	exists, err := c.Query().
 		Where(entitytemplate.ID(id), entitytemplate.HasGroupWith(group.ID(gid))).
+		Exist(ctx)
+	if err != nil {
+		return err
+	}
+	if !exists {
+		return &ent.NotFoundError{}
+	}
+	return nil
+}
+
+// assertEntityViewInGroup is the View analog of assertEntityInGroup.
+func assertEntityViewInGroup(ctx context.Context, c *ent.EntityViewClient, gid, id uuid.UUID) error {
+	if id == uuid.Nil {
+		return nil
+	}
+	exists, err := c.Query().
+		Where(entityview.ID(id), entityview.HasGroupWith(group.ID(gid))).
 		Exist(ctx)
 	if err != nil {
 		return err

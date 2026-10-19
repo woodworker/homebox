@@ -830,6 +830,9 @@ definitions:
       created_at:
         description: CreatedAt holds the value of the "created_at" field.
         type: string
+      default_view_id:
+        description: View the tag page starts with
+        type: string
       description:
         description: Description holds the value of the "description" field.
         type: string
@@ -859,6 +862,10 @@ definitions:
         items:
           $ref: '#/definitions/ent.Tag'
         type: array
+      default_view:
+        allOf:
+        - $ref: '#/definitions/ent.EntityView'
+        description: DefaultView holds the value of the default_view edge.
       entities:
         description: Entities holds the value of the entities edge.
         items:
@@ -2067,6 +2074,9 @@ definitions:
     properties:
       color:
         type: string
+      defaultViewId:
+        type: string
+        x-nullable: true
       description:
         maxLength: 1000
         type: string
@@ -2093,6 +2103,10 @@ definitions:
         type: string
       createdAt:
         type: string
+      defaultViewId:
+        type: string
+        x-nullable: true
+        x-omitempty: true
       description:
         type: string
       icon:
@@ -2135,6 +2149,9 @@ definitions:
     properties:
       color:
         type: string
+      defaultViewId:
+        type: string
+        x-nullable: true
       description:
         maxLength: 1000
         type: string

@@ -2,8 +2,10 @@ package schema
 
 import (
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
+	"github.com/google/uuid"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/schema/mixins"
 )
 
@@ -29,6 +31,10 @@ func (Tag) Fields() []ent.Field {
 		field.String("icon").
 			MaxLen(255).
 			Optional(),
+		field.UUID("default_view_id", uuid.UUID{}).
+			Optional().
+			Nillable().
+			Comment("View the tag page starts with"),
 	}
 }
 
@@ -39,5 +45,9 @@ func (Tag) Edges() []ent.Edge {
 		edge.To("children", Tag.Type).
 			From("parent").
 			Unique(),
+		edge.To("default_view", EntityView.Type).
+			Field("default_view_id").
+			Unique().
+			Annotations(entsql.OnDelete(entsql.SetNull)),
 	}
 }

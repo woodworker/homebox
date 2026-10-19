@@ -564,6 +564,7 @@ var (
 		{Name: "icon", Type: field.TypeString, Nullable: true, Size: 255},
 		{Name: "group_tags", Type: field.TypeUUID},
 		{Name: "tag_children", Type: field.TypeUUID, Nullable: true},
+		{Name: "default_view_id", Type: field.TypeUUID, Nullable: true},
 	}
 	// TagsTable holds the schema information for the "tags" table.
 	TagsTable = &schema.Table{
@@ -581,6 +582,12 @@ var (
 				Symbol:     "tags_tags_children",
 				Columns:    []*schema.Column{TagsColumns[8]},
 				RefColumns: []*schema.Column{TagsColumns[0]},
+				OnDelete:   schema.SetNull,
+			},
+			{
+				Symbol:     "tags_entity_views_default_view",
+				Columns:    []*schema.Column{TagsColumns[9]},
+				RefColumns: []*schema.Column{EntityViewsColumns[0]},
 				OnDelete:   schema.SetNull,
 			},
 		},
@@ -742,6 +749,7 @@ func init() {
 	PasswordResetTokensTable.ForeignKeys[0].RefTable = UsersTable
 	TagsTable.ForeignKeys[0].RefTable = GroupsTable
 	TagsTable.ForeignKeys[1].RefTable = TagsTable
+	TagsTable.ForeignKeys[2].RefTable = EntityViewsTable
 	TemplateFieldsTable.ForeignKeys[0].RefTable = EntityTemplatesTable
 	UserGroupsTable.ForeignKeys[0].RefTable = UsersTable
 	UserGroupsTable.ForeignKeys[1].RefTable = GroupsTable

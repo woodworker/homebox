@@ -76,3 +76,32 @@ test("a table view shows its columns in item lists", async ({ page }) => {
     await deleteView(page, name);
   }
 });
+
+test("a tag page starts with the tag's default view", async ({ page }) => {
+  const name = `E2E Tag View ${Date.now()}`;
+  const field = "E2E Field";
+
+  await login(page);
+  await createView(page, name, field);
+
+  // A fresh tag per run, so parallel browsers don't change each other's default.
+  const tag: { id: string } = await (
+    await page.request.post("/api/v1/tags", { data: { name: `E2E Tag ${Date.now()}` } })
+  ).json();
+
+  try {
+    await page.goto(`/tag/${tag.id}`);
+    await page.getByRole("button", { name: "Edit", exact: true }).click();
+    const dialog = page.getByRole("dialog");
+    await dialog.getByRole("combobox").filter({ hasText: "Table" }).click();
+    await page.getByRole("option", { name }).click();
+    await dialog.getByRole("button", { name: "Update" }).click();
+
+    await page.reload();
+    await expect(page.getByRole("combobox", { name: "Views" })).toContainText(name);
+    await expect(page.getByRole("columnheader", { name: field })).toBeVisible();
+  } finally {
+    await page.request.delete(`/api/v1/tags/${tag.id}`);
+    await deleteView(page, name);
+  }
+});

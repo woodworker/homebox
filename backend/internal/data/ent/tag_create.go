@@ -12,6 +12,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entity"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityview"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/tag"
 )
@@ -99,6 +100,20 @@ func (_c *TagCreate) SetNillableIcon(v *string) *TagCreate {
 	return _c
 }
 
+// SetDefaultViewID sets the "default_view_id" field.
+func (_c *TagCreate) SetDefaultViewID(v uuid.UUID) *TagCreate {
+	_c.mutation.SetDefaultViewID(v)
+	return _c
+}
+
+// SetNillableDefaultViewID sets the "default_view_id" field if the given value is not nil.
+func (_c *TagCreate) SetNillableDefaultViewID(v *uuid.UUID) *TagCreate {
+	if v != nil {
+		_c.SetDefaultViewID(*v)
+	}
+	return _c
+}
+
 // SetID sets the "id" field.
 func (_c *TagCreate) SetID(v uuid.UUID) *TagCreate {
 	_c.mutation.SetID(v)
@@ -171,6 +186,11 @@ func (_c *TagCreate) AddChildren(v ...*Tag) *TagCreate {
 		ids[i] = v[i].ID
 	}
 	return _c.AddChildIDs(ids...)
+}
+
+// SetDefaultView sets the "default_view" edge to the EntityView entity.
+func (_c *TagCreate) SetDefaultView(v *EntityView) *TagCreate {
+	return _c.SetDefaultViewID(v.ID)
 }
 
 // Mutation returns the TagMutation object of the builder.
@@ -379,6 +399,23 @@ func (_c *TagCreate) createSpec() (*Tag, *sqlgraph.CreateSpec) {
 		for _, k := range nodes {
 			edge.Target.Nodes = append(edge.Target.Nodes, k)
 		}
+		_spec.Edges = append(_spec.Edges, edge)
+	}
+	if nodes := _c.mutation.DefaultViewIDs(); len(nodes) > 0 {
+		edge := &sqlgraph.EdgeSpec{
+			Rel:     sqlgraph.M2O,
+			Inverse: false,
+			Table:   tag.DefaultViewTable,
+			Columns: []string{tag.DefaultViewColumn},
+			Bidi:    false,
+			Target: &sqlgraph.EdgeTarget{
+				IDSpec: sqlgraph.NewFieldSpec(entityview.FieldID, field.TypeUUID),
+			},
+		}
+		for _, k := range nodes {
+			edge.Target.Nodes = append(edge.Target.Nodes, k)
+		}
+		_node.DefaultViewID = &nodes[0]
 		_spec.Edges = append(_spec.Edges, edge)
 	}
 	return _node, _spec

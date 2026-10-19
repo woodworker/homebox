@@ -4603,6 +4603,10 @@ const docTemplate = `{
                     "description": "CreatedAt holds the value of the \"created_at\" field.",
                     "type": "string"
                 },
+                "default_view_id": {
+                    "description": "View the tag page starts with",
+                    "type": "string"
+                },
                 "description": {
                     "description": "Description holds the value of the \"description\" field.",
                     "type": "string"
@@ -4642,6 +4646,14 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/ent.Tag"
                     }
+                },
+                "default_view": {
+                    "description": "DefaultView holds the value of the default_view edge.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/ent.EntityView"
+                        }
+                    ]
                 },
                 "entities": {
                     "description": "Entities holds the value of the entities edge.",
@@ -6385,6 +6397,10 @@ const docTemplate = `{
                 "color": {
                     "type": "string"
                 },
+                "defaultViewId": {
+                    "type": "string",
+                    "x-nullable": true
+                },
                 "description": {
                     "type": "string",
                     "maxLength": 1000
@@ -6418,6 +6434,11 @@ const docTemplate = `{
                 },
                 "createdAt": {
                     "type": "string"
+                },
+                "defaultViewId": {
+                    "type": "string",
+                    "x-nullable": true,
+                    "x-omitempty": true
                 },
                 "description": {
                     "type": "string"
@@ -6486,6 +6507,10 @@ const docTemplate = `{
             "properties": {
                 "color": {
                     "type": "string"
+                },
+                "defaultViewId": {
+                    "type": "string",
+                    "x-nullable": true
                 },
                 "description": {
                     "type": "string",

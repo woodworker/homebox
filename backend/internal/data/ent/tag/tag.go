@@ -27,6 +27,8 @@ const (
 	FieldColor = "color"
 	// FieldIcon holds the string denoting the icon field in the database.
 	FieldIcon = "icon"
+	// FieldDefaultViewID holds the string denoting the default_view_id field in the database.
+	FieldDefaultViewID = "default_view_id"
 	// EdgeGroup holds the string denoting the group edge name in mutations.
 	EdgeGroup = "group"
 	// EdgeEntities holds the string denoting the entities edge name in mutations.
@@ -35,6 +37,8 @@ const (
 	EdgeParent = "parent"
 	// EdgeChildren holds the string denoting the children edge name in mutations.
 	EdgeChildren = "children"
+	// EdgeDefaultView holds the string denoting the default_view edge name in mutations.
+	EdgeDefaultView = "default_view"
 	// Table holds the table name of the tag in the database.
 	Table = "tags"
 	// GroupTable is the table that holds the group relation/edge.
@@ -57,6 +61,13 @@ const (
 	ChildrenTable = "tags"
 	// ChildrenColumn is the table column denoting the children relation/edge.
 	ChildrenColumn = "tag_children"
+	// DefaultViewTable is the table that holds the default_view relation/edge.
+	DefaultViewTable = "tags"
+	// DefaultViewInverseTable is the table name for the EntityView entity.
+	// It exists in this package in order to avoid circular dependency with the "entityview" package.
+	DefaultViewInverseTable = "entity_views"
+	// DefaultViewColumn is the table column denoting the default_view relation/edge.
+	DefaultViewColumn = "default_view_id"
 )
 
 // Columns holds all SQL columns for tag fields.
@@ -68,6 +79,7 @@ var Columns = []string{
 	FieldDescription,
 	FieldColor,
 	FieldIcon,
+	FieldDefaultViewID,
 }
 
 // ForeignKeys holds the SQL foreign-keys that are owned by the "tags"
@@ -155,6 +167,11 @@ func ByIcon(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIcon, opts...).ToFunc()
 }
 
+// ByDefaultViewID orders the results by the default_view_id field.
+func ByDefaultViewID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldDefaultViewID, opts...).ToFunc()
+}
+
 // ByGroupField orders the results by group field.
 func ByGroupField(field string, opts ...sql.OrderTermOption) OrderOption {
 	return func(s *sql.Selector) {
@@ -196,6 +213,13 @@ func ByChildren(term sql.OrderTerm, terms ...sql.OrderTerm) OrderOption {
 		sqlgraph.OrderByNeighborTerms(s, newChildrenStep(), append([]sql.OrderTerm{term}, terms...)...)
 	}
 }
+
+// ByDefaultViewField orders the results by default_view field.
+func ByDefaultViewField(field string, opts ...sql.OrderTermOption) OrderOption {
+	return func(s *sql.Selector) {
+		sqlgraph.OrderByNeighborTerms(s, newDefaultViewStep(), sql.OrderByField(field, opts...))
+	}
+}
 func newGroupStep() *sqlgraph.Step {
 	return sqlgraph.NewStep(
 		sqlgraph.From(Table, FieldID),
@@ -222,5 +246,12 @@ func newChildrenStep() *sqlgraph.Step {
 		sqlgraph.From(Table, FieldID),
 		sqlgraph.To(Table, FieldID),
 		sqlgraph.Edge(sqlgraph.O2M, false, ChildrenTable, ChildrenColumn),
+	)
+}
+func newDefaultViewStep() *sqlgraph.Step {
+	return sqlgraph.NewStep(
+		sqlgraph.From(Table, FieldID),
+		sqlgraph.To(DefaultViewInverseTable, FieldID),
+		sqlgraph.Edge(sqlgraph.M2O, false, DefaultViewTable, DefaultViewColumn),
 	)
 }

@@ -4861,6 +4861,10 @@
                         "description": "CreatedAt holds the value of the \"created_at\" field.",
                         "type": "string"
                     },
+                    "default_view_id": {
+                        "description": "View the tag page starts with",
+                        "type": "string"
+                    },
                     "description": {
                         "description": "Description holds the value of the \"description\" field.",
                         "type": "string"
@@ -4900,6 +4904,14 @@
                         "items": {
                             "$ref": "#/components/schemas/ent.Tag"
                         }
+                    },
+                    "default_view": {
+                        "description": "DefaultView holds the value of the default_view edge.",
+                        "allOf": [
+                            {
+                                "$ref": "#/components/schemas/ent.EntityView"
+                            }
+                        ]
                     },
                     "entities": {
                         "description": "Entities holds the value of the entities edge.",
@@ -6643,6 +6655,10 @@
                     "color": {
                         "type": "string"
                     },
+                    "defaultViewId": {
+                        "type": "string",
+                        "nullable": true
+                    },
                     "description": {
                         "type": "string",
                         "maxLength": 1000
@@ -6676,6 +6692,11 @@
                     },
                     "createdAt": {
                         "type": "string"
+                    },
+                    "defaultViewId": {
+                        "type": "string",
+                        "x-omitempty": true,
+                        "nullable": true
                     },
                     "description": {
                         "type": "string"
@@ -6744,6 +6765,10 @@
                 "properties": {
                     "color": {
                         "type": "string"
+                    },
+                    "defaultViewId": {
+                        "type": "string",
+                        "nullable": true
                     },
                     "description": {
                         "type": "string",

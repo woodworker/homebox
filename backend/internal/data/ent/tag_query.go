@@ -14,6 +14,7 @@ import (
 	"entgo.io/ent/schema/field"
 	"github.com/google/uuid"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entity"
+	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/entityview"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/group"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/predicate"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/tag"
@@ -22,15 +23,16 @@ import (
 // TagQuery is the builder for querying Tag entities.
 type TagQuery struct {
 	config
-	ctx          *QueryContext
-	order        []tag.OrderOption
-	inters       []Interceptor
-	predicates   []predicate.Tag
-	withGroup    *GroupQuery
-	withEntities *EntityQuery
-	withParent   *TagQuery
-	withChildren *TagQuery
-	withFKs      bool
+	ctx             *QueryContext
+	order           []tag.OrderOption
+	inters          []Interceptor
+	predicates      []predicate.Tag
+	withGroup       *GroupQuery
+	withEntities    *EntityQuery
+	withParent      *TagQuery
+	withChildren    *TagQuery
+	withDefaultView *EntityViewQuery
+	withFKs         bool
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -148,6 +150,28 @@ func (_q *TagQuery) QueryChildren() *TagQuery {
 			sqlgraph.From(tag.Table, tag.FieldID, selector),
 			sqlgraph.To(tag.Table, tag.FieldID),
 			sqlgraph.Edge(sqlgraph.O2M, false, tag.ChildrenTable, tag.ChildrenColumn),
+		)
+		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
+		return fromU, nil
+	}
+	return query
+}
+
+// QueryDefaultView chains the current query on the "default_view" edge.
+func (_q *TagQuery) QueryDefaultView() *EntityViewQuery {
+	query := (&EntityViewClient{config: _q.config}).Query()
+	query.path = func(ctx context.Context) (fromU *sql.Selector, err error) {
+		if err := _q.prepareQuery(ctx); err != nil {
+			return nil, err
+		}
+		selector := _q.sqlQuery(ctx)
+		if err := selector.Err(); err != nil {
+			return nil, err
+		}
+		step := sqlgraph.NewStep(
+			sqlgraph.From(tag.Table, tag.FieldID, selector),
+			sqlgraph.To(entityview.Table, entityview.FieldID),
+			sqlgraph.Edge(sqlgraph.M2O, false, tag.DefaultViewTable, tag.DefaultViewColumn),
 		)
 		fromU = sqlgraph.SetNeighbors(_q.driver.Dialect(), step)
 		return fromU, nil
@@ -342,15 +366,16 @@ func (_q *TagQuery) Clone() *TagQuery {
 		return nil
 	}
 	return &TagQuery{
-		config:       _q.config,
-		ctx:          _q.ctx.Clone(),
-		order:        append([]tag.OrderOption{}, _q.order...),
-		inters:       append([]Interceptor{}, _q.inters...),
-		predicates:   append([]predicate.Tag{}, _q.predicates...),
-		withGroup:    _q.withGroup.Clone(),
-		withEntities: _q.withEntities.Clone(),
-		withParent:   _q.withParent.Clone(),
-		withChildren: _q.withChildren.Clone(),
+		config:          _q.config,
+		ctx:             _q.ctx.Clone(),
+		order:           append([]tag.OrderOption{}, _q.order...),
+		inters:          append([]Interceptor{}, _q.inters...),
+		predicates:      append([]predicate.Tag{}, _q.predicates...),
+		withGroup:       _q.withGroup.Clone(),
+		withEntities:    _q.withEntities.Clone(),
+		withParent:      _q.withParent.Clone(),
+		withChildren:    _q.withChildren.Clone(),
+		withDefaultView: _q.withDefaultView.Clone(),
 		// clone intermediate query.
 		sql:  _q.sql.Clone(),
 		path: _q.path,
@@ -398,6 +423,17 @@ func (_q *TagQuery) WithChildren(opts ...func(*TagQuery)) *TagQuery {
 		opt(query)
 	}
 	_q.withChildren = query
+	return _q
+}
+
+// WithDefaultView tells the query-builder to eager-load the nodes that are connected to
+// the "default_view" edge. The optional arguments are used to configure the query builder of the edge.
+func (_q *TagQuery) WithDefaultView(opts ...func(*EntityViewQuery)) *TagQuery {
+	query := (&EntityViewClient{config: _q.config}).Query()
+	for _, opt := range opts {
+		opt(query)
+	}
+	_q.withDefaultView = query
 	return _q
 }
 
@@ -480,11 +516,12 @@ func (_q *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 		nodes       = []*Tag{}
 		withFKs     = _q.withFKs
 		_spec       = _q.querySpec()
-		loadedTypes = [4]bool{
+		loadedTypes = [5]bool{
 			_q.withGroup != nil,
 			_q.withEntities != nil,
 			_q.withParent != nil,
 			_q.withChildren != nil,
+			_q.withDefaultView != nil,
 		}
 	)
 	if _q.withGroup != nil || _q.withParent != nil {
@@ -534,6 +571,12 @@ func (_q *TagQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Tag, err
 		if err := _q.loadChildren(ctx, query, nodes,
 			func(n *Tag) { n.Edges.Children = []*Tag{} },
 			func(n *Tag, e *Tag) { n.Edges.Children = append(n.Edges.Children, e) }); err != nil {
+			return nil, err
+		}
+	}
+	if query := _q.withDefaultView; query != nil {
+		if err := _q.loadDefaultView(ctx, query, nodes, nil,
+			func(n *Tag, e *EntityView) { n.Edges.DefaultView = e }); err != nil {
 			return nil, err
 		}
 	}
@@ -696,6 +739,38 @@ func (_q *TagQuery) loadChildren(ctx context.Context, query *TagQuery, nodes []*
 	}
 	return nil
 }
+func (_q *TagQuery) loadDefaultView(ctx context.Context, query *EntityViewQuery, nodes []*Tag, init func(*Tag), assign func(*Tag, *EntityView)) error {
+	ids := make([]uuid.UUID, 0, len(nodes))
+	nodeids := make(map[uuid.UUID][]*Tag)
+	for i := range nodes {
+		if nodes[i].DefaultViewID == nil {
+			continue
+		}
+		fk := *nodes[i].DefaultViewID
+		if _, ok := nodeids[fk]; !ok {
+			ids = append(ids, fk)
+		}
+		nodeids[fk] = append(nodeids[fk], nodes[i])
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	query.Where(entityview.IDIn(ids...))
+	neighbors, err := query.All(ctx)
+	if err != nil {
+		return err
+	}
+	for _, n := range neighbors {
+		nodes, ok := nodeids[n.ID]
+		if !ok {
+			return fmt.Errorf(`unexpected foreign-key "default_view_id" returned %v`, n.ID)
+		}
+		for i := range nodes {
+			assign(nodes[i], n)
+		}
+	}
+	return nil
+}
 
 func (_q *TagQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := _q.querySpec()
@@ -721,6 +796,9 @@ func (_q *TagQuery) querySpec() *sqlgraph.QuerySpec {
 			if fields[i] != tag.FieldID {
 				_spec.Node.Columns = append(_spec.Node.Columns, fields[i])
 			}
+		}
+		if _q.withDefaultView != nil {
+			_spec.Node.AddColumnOnce(tag.FieldDefaultViewID)
 		}
 	}
 	if ps := _q.predicates; len(ps) > 0 {
