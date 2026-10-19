@@ -57,6 +57,7 @@ func startEntityCtrlSpan(ctx context.Context, name string, attrs ...attribute.Ke
 //	@Param		entityTypeIds	query		[]string	false	"entity type IDs; when provided this filter takes precedence over isLocation"	collectionFormat(multi)
 //	@Param		orderBy			query		string		false	"field to order by; valid values: name, createdAt, updatedAt, assetId"
 //	@Param		orderDirection	query		string		false	"order direction; valid values: asc, desc. Defaults to desc for createdAt and updatedAt, asc otherwise"
+//	@Param		includeFields	query		bool		false	"include each entity's custom fields in the results"
 //	@Success	200				{object}	repo.EntityListResult
 //	@Router		/v1/entities [GET]
 //	@Security	Bearer
@@ -92,6 +93,7 @@ func (ctrl *V1Controller) HandleEntitiesGetAll() errchain.HandlerFunc {
 			Fields:           filterFieldItems(params["fields"]),
 			OrderBy:          params.Get("orderBy"),
 			OrderDirection:   params.Get("orderDirection"),
+			IncludeFields:    queryBool(params.Get("includeFields")),
 		}
 
 		// Parse isLocation filter: "true" = locations only, "false" = items only, absent = default (items only)

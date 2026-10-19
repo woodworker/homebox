@@ -310,6 +310,12 @@ const docTemplate = `{
                         "description": "order direction; valid values: asc, desc. Defaults to desc for createdAt and updatedAt, asc otherwise",
                         "name": "orderDirection",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "include each entity's custom fields in the results",
+                        "name": "includeFields",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -5165,6 +5171,15 @@ const docTemplate = `{
                             "$ref": "#/definitions/repo.EntityTypeSummary"
                         }
                     ],
+                    "x-nullable": true,
+                    "x-omitempty": true
+                },
+                "fields": {
+                    "description": "Custom fields, only populated when the query asks for them (includeFields).",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/repo.EntityFieldData"
+                    },
                     "x-nullable": true,
                     "x-omitempty": true
                 },

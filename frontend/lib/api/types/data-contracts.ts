@@ -865,6 +865,8 @@ export interface EntitySummary {
   createdAt: Date | string;
   description: string;
   entityType?: EntityTypeSummary | null;
+  /** Custom fields, only populated when the query asks for them (includeFields). */
+  fields?: EntityFieldData[] | null;
   id: string;
   imageId?: string | null;
   insured: boolean;

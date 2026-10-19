@@ -327,6 +327,14 @@
                         "schema": {
                             "type": "string"
                         }
+                    },
+                    {
+                        "description": "include each entity's custom fields in the results",
+                        "name": "includeFields",
+                        "in": "query",
+                        "schema": {
+                            "type": "boolean"
+                        }
                     }
                 ],
                 "responses": {
@@ -5412,6 +5420,15 @@
                                 "$ref": "#/components/schemas/repo.EntityTypeSummary"
                             }
                         ],
+                        "x-omitempty": true,
+                        "nullable": true
+                    },
+                    "fields": {
+                        "description": "Custom fields, only populated when the query asks for them (includeFields).",
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/repo.EntityFieldData"
+                        },
                         "x-omitempty": true,
                         "nullable": true
                     },

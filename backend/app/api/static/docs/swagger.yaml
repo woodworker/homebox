@@ -1349,6 +1349,13 @@ definitions:
         - $ref: '#/definitions/repo.EntityTypeSummary'
         x-nullable: true
         x-omitempty: true
+      fields:
+        description: Custom fields, only populated when the query asks for them (includeFields).
+        items:
+          $ref: '#/definitions/repo.EntityFieldData'
+        type: array
+        x-nullable: true
+        x-omitempty: true
       id:
         type: string
       imageId:
@@ -2591,6 +2598,10 @@ paths:
         in: query
         name: orderDirection
         type: string
+      - description: include each entity's custom fields in the results
+        in: query
+        name: includeFields
+        type: boolean
       produces:
       - application/json
       responses:

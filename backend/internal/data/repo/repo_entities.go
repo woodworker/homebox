@@ -75,6 +75,7 @@ type (
 		OnlyWithPhoto    bool    `json:"onlyWithPhoto"`
 		IncludeArchived  bool    `json:"includeArchived"`
 		FilterChildren   bool    `json:"filterChildren"` // when true, only return root entities (no parent)
+		IncludeFields    bool    `json:"includeFields"`  // when true, each summary carries its custom fields
 	}
 
 	DuplicateOptions struct {
@@ -180,6 +181,9 @@ type (
 		EntityType *EntityTypeSummary `json:"entityType,omitempty" extensions:"x-nullable,x-omitempty"`
 		Tags       []TagSummary       `json:"tags"`
 
+		// Custom fields, only populated when the query asks for them (includeFields).
+		Fields []EntityFieldData `json:"fields,omitempty" extensions:"x-nullable,x-omitempty"`
+
 		ImageID     *uuid.UUID `json:"imageId,omitempty"     extensions:"x-nullable,x-omitempty"`
 		ThumbnailId *uuid.UUID `json:"thumbnailId,omitempty" extensions:"x-nullable,x-omitempty"`
 
@@ -258,6 +262,11 @@ func mapEntitySummary(e *ent.Entity) EntitySummary {
 
 	tags := lo.Ternary(e.Edges.Tag != nil, mapEach(e.Edges.Tag, mapTagSummary), []TagSummary{})
 
+	var fields []EntityFieldData
+	if e.Edges.Fields != nil {
+		fields = mapEntityFields(e.Edges.Fields)
+	}
+
 	var imageID *uuid.UUID
 	var thumbnailID *uuid.UUID
 	if e.Edges.Attachments != nil {
@@ -287,6 +296,7 @@ func mapEntitySummary(e *ent.Entity) EntitySummary {
 		Parent:     parent,
 		EntityType: et,
 		Tags:       tags,
+		Fields:     fields,
 
 		// Warranty
 		Insured:     e.Insured,
@@ -950,6 +960,10 @@ func (r *EntityRepository) QueryByGroup(ctx context.Context, gid uuid.UUID, q En
 			)
 			aq.WithThumbnail()
 		})
+
+	if q.IncludeFields {
+		qb = qb.WithFields()
+	}
 
 	if q.Page != -1 || q.PageSize != -1 {
 		qb = qb.

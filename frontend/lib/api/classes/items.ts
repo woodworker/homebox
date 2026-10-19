@@ -32,6 +32,7 @@ export type ItemsQuery = {
   onlyWithPhoto?: boolean;
   q?: string;
   fields?: string[];
+  includeFields?: boolean;
 };
 
 export type LocationsQuery = {

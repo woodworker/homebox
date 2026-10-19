@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/samber/lo"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/sysadminsmedia/homebox/backend/internal/data/ent/attachment"
@@ -1034,4 +1035,45 @@ func TestEntityRepository_QueryByGroup_TimestampOrderDefaultsDesc(t *testing.T) 
 
 	assert.Equal(t, []uuid.UUID{first.ID, third.ID, second.ID}, order("updatedAt", ""))
 	assert.Equal(t, []uuid.UUID{second.ID, third.ID, first.ID}, order("updatedAt", "asc"))
+}
+
+// TestEntityRepository_QueryByGroup_IncludeFields verifies that list results
+// only carry custom fields when the query asks for them.
+func TestEntityRepository_QueryByGroup_IncludeFields(t *testing.T) {
+	ctx := context.Background()
+	itemET := useItemEntityType(t)
+
+	e := mustCreateEntity(t, "fields-item", itemET.ID, uuid.Nil)
+	_, err := tRepos.Entities.UpdateByGroup(ctx, tGroup.ID, EntityUpdate{
+		ID:           e.ID,
+		Name:         e.Name,
+		EntityTypeID: itemET.ID,
+		Fields: []EntityFieldData{
+			{Name: "Color", Type: "text", TextValue: "Brown"},
+			{Name: "Spool weight (g)", Type: "number", NumberValue: 1000},
+		},
+	})
+	require.NoError(t, err)
+
+	find := func(includeFields bool) EntitySummary {
+		t.Helper()
+		res, err := tRepos.Entities.QueryByGroup(ctx, tGroup.ID, EntityQuery{
+			Page:          -1,
+			PageSize:      -1,
+			IncludeFields: includeFields,
+		})
+		require.NoError(t, err)
+
+		item, ok := lo.Find(res.Items, func(s EntitySummary) bool { return s.ID == e.ID })
+		require.True(t, ok)
+		return item
+	}
+
+	assert.Empty(t, find(false).Fields)
+
+	fields := find(true).Fields
+	require.Len(t, fields, 2)
+	byName := lo.KeyBy(fields, func(f EntityFieldData) string { return f.Name })
+	assert.Equal(t, "Brown", byName["Color"].TextValue)
+	assert.Equal(t, 1000, byName["Spool weight (g)"].NumberValue)
 }
