@@ -200,6 +200,7 @@
 
       const resp = await api.items.getAll({
         tags: [tagId.value],
+        includeFields: true,
       });
 
       if (resp.error) {

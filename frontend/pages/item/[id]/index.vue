@@ -501,6 +501,7 @@
 
       const resp = await api.items.getAll({
         parentIds: [itemId.value],
+        includeFields: true,
       });
 
       if (resp.error) {

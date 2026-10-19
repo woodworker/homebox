@@ -4,34 +4,70 @@ import DropdownAction from "./data-table-dropdown.vue";
 import { ArrowDown, ArrowUpDown, Check, X } from "lucide-vue-next";
 import Button from "~/components/ui/button/Button.vue";
 import Checkbox from "~/components/Form/Checkbox.vue";
-import type { EntitySummary } from "~/lib/api/types/data-contracts";
+import type { EntitySummary, TypesTableViewColumn, TypesTableViewConfig } from "~/lib/api/types/data-contracts";
 
 import Currency from "~/components/global/Currency.vue";
 import DateTime from "~/components/global/DateTime.vue";
 import { cn } from "~/lib/utils";
 
+/** Builtin columns a table view can show; mirrors the backend allowlist. */
+export const TABLE_VIEW_BUILTIN_COLUMNS = [
+  "assetId",
+  "name",
+  "quantity",
+  "insured",
+  "purchasePrice",
+  "location",
+  "archived",
+  "createdAt",
+  "updatedAt",
+] as const;
+
+/** Column id of a table view column; custom fields are prefixed so they can't clash with builtin ids. */
+export function tableViewColumnId(c: TypesTableViewColumn): string {
+  return c.kind === "field" ? `field:${c.key}` : c.key;
+}
+
+function customFieldValue(item: EntitySummary, name: string): string | number | boolean | undefined {
+  const field = item.fields?.find(f => f.name === name);
+  if (!field) return undefined;
+  switch (field.type) {
+    case "number":
+      return field.numberValue;
+    case "boolean":
+      return field.booleanValue;
+    default:
+      return field.textValue || undefined;
+  }
+}
+
 /**
  * Create columns with i18n support.
  * Pass `t` from useI18n() when creating the columns in your component.
+ * With a table view config (`table`), only its columns are returned, in its order.
  */
 export function makeColumns({
   t,
   refresh,
   disableSort,
+  table,
 }: {
   t: (key: string) => string;
   refresh?: () => void;
   disableSort?: boolean;
+  table?: TypesTableViewConfig | null;
 }): ColumnDef<EntitySummary>[] {
-  const sortable = (column: Column<EntitySummary, unknown>, key: string) => {
+  // `literal` skips translation, for custom field names.
+  const sortable = (column: Column<EntitySummary, unknown>, key: string, literal = false) => {
+    const label = literal ? key : t(key);
     const sortState = column.getIsSorted(); // 'asc' | 'desc' | false
     if (!sortState) {
       // show the neutral up/down icon when not sorted
-      return [t(key), h(ArrowUpDown, { class: cn(["ml-2 h-4 w-4 opacity-40", disableSort && "opacity-0"]) })];
+      return [label, h(ArrowUpDown, { class: cn(["ml-2 h-4 w-4 opacity-40", disableSort && "opacity-0"]) })];
     }
     // show a single arrow that points up for asc (rotate-180) and down for desc
     return [
-      t(key),
+      label,
       h(ArrowDown, {
         class: cn([
           "ml-2 h-4 w-4 transition-transform opacity-100",
@@ -42,7 +78,7 @@ export function makeColumns({
     ];
   };
 
-  return [
+  const columns: ColumnDef<EntitySummary>[] = [
     {
       id: "select",
       header: ({ table }) =>
@@ -281,4 +317,43 @@ export function makeColumns({
       },
     },
   ];
+
+  if (!table) {
+    return columns;
+  }
+
+  const fieldColumn = (name: string): ColumnDef<EntitySummary> => ({
+    id: `field:${name}`,
+    accessorFn: item => customFieldValue(item, name),
+    sortUndefined: "last",
+    header: ({ column }) =>
+      h(
+        Button,
+        {
+          variant: "ghost",
+          onClick: () => !disableSort && column.toggleSorting(column.getIsSorted() === "asc"),
+        },
+        () => sortable(column, name, true)
+      ),
+    cell: ({ getValue }) => {
+      const val = getValue();
+      if (typeof val === "boolean") {
+        return h(
+          "div",
+          { class: "block mx-auto w-min" },
+          val ? h(Check, { class: "h-4 w-4 text-green-500" }) : h(X, { class: "h-4 w-4 text-destructive" })
+        );
+      }
+      return h("div", { class: "text-sm" }, String(val ?? ""));
+    },
+  });
+
+  const byId = new Map(columns.map(c => [c.id, c]));
+  const viewColumns = table.columns.flatMap(c => {
+    if (c.kind === "field") return [fieldColumn(c.key)];
+    const builtin = byId.get(c.key);
+    return builtin ? [builtin] : [];
+  });
+
+  return [byId.get("select")!, ...viewColumns, byId.get("actions")!];
 }

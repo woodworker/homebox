@@ -10,6 +10,7 @@
   import MdiBell from "~icons/mdi/bell";
   import MdiCog from "~icons/mdi/cog";
   import MdiShape from "~icons/mdi/shape";
+  import MdiTableEye from "~icons/mdi/table-eye";
   import MdiWrench from "~icons/mdi/wrench";
   import MdiLogout from "~icons/mdi/logout";
   import MdiDelete from "~icons/mdi/delete";
@@ -60,6 +61,12 @@
       label: "collection.tabs.entity_types",
       to: "/collection/entity-types",
       icon: MdiShape,
+    },
+    {
+      id: "views",
+      label: "collection.tabs.views",
+      to: "/collection/views",
+      icon: MdiTableEye,
     },
     {
       id: "tools",

@@ -315,6 +315,7 @@
       onlyWithPhoto: onlyWithPhoto.value,
       orderBy: orderBy.value,
       orderDirection: orderDirection.value,
+      includeFields: true,
       page: page.value,
       q: query.value,
       loc: locIDs.value,

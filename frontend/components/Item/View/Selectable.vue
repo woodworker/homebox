@@ -5,9 +5,10 @@
   import MdiTable from "~icons/mdi/table";
   import { Badge } from "@/components/ui/badge";
   import { Button, ButtonGroup } from "@/components/ui/button";
+  import ViewPicker from "./ViewPicker.vue";
   import BaseSectionHeader from "@/components/Base/SectionHeader.vue";
   import DataTable from "./table/data-table.vue";
-  import { makeColumns } from "./table/columns";
+  import { makeColumns, tableViewColumnId } from "./table/columns";
   import { useI18n } from "vue-i18n";
   import type { Pagination } from "./pagination";
   import MaintenanceEditModal from "@/components/Maintenance/EditModal.vue";
@@ -28,24 +29,59 @@
 
   const preferences = useViewPreferences();
   const { t } = useI18n();
+
+  const viewStore = useViewStore();
+  onMounted(() => viewStore.ensureFetched());
+  const tableViews = computed(() => viewStore.views.filter(v => v.kind === "table"));
+
+  // The selected view only applies to the current page and resets on
+  // navigation, so a view picked for one tag doesn't carry over to the next.
+  const route = useRoute();
+  const selectedViewId = ref<string | null>(null);
+  watch(
+    () => route.path,
+    () => {
+      selectedViewId.value = null;
+    }
+  );
+  const activeView = computed(() => tableViews.value.find(v => v.id === selectedViewId.value) ?? null);
+
   const columns = computed(() =>
     makeColumns({
       t,
       refresh: () => emit("refresh"),
       disableSort: props.disableSort,
+      table: activeView.value?.table,
     })
   );
+
+  // Server-sorted lists (disableSort) keep their own order.
+  const defaultSorting = computed(() => {
+    const sort = activeView.value?.table?.sort;
+    if (!sort || props.disableSort) return [];
+    const id = tableViewColumnId(sort);
+    if (!columns.value.some(c => c.id === id)) return [];
+    return [{ id, desc: sort.direction === "desc" }];
+  });
 
   const viewSet = computed(() => {
     return !!props.view;
   });
 
+  // A selected (or default) view is a table view, so it shows as a table
+  // regardless of the card/table preference.
   const itemView = computed(() => {
-    return props.view ?? preferences.value.itemDisplayView;
+    return props.view ?? (activeView.value ? "table" : preferences.value.itemDisplayView);
   });
 
   function setViewPreference(view: ViewType) {
     preferences.value.itemDisplayView = view;
+    // "Table" means the default columns.
+    selectedViewId.value = null;
+  }
+
+  function selectTableView(id: string) {
+    selectedViewId.value = id;
   }
 
   const externalPagination = computed(() => !!props.pagination);
@@ -79,12 +115,13 @@
             </Button>
             <Button
               size="sm"
-              :variant="itemView === 'table' ? 'default' : 'outline'"
+              :variant="itemView === 'table' && !activeView ? 'default' : 'outline'"
               @click="setViewPreference('table')"
             >
               <MdiTable class="size-5" />
               {{ $t("components.item.view.selectable.table") }}
             </Button>
+            <ViewPicker :views="tableViews" :active="activeView" @select="selectTableView" />
           </ButtonGroup>
         </div>
       </template>
@@ -108,6 +145,8 @@
       :data="items"
       :location-flat-tree="locationFlatTree"
       :external-pagination="pagination"
+      :entity-view="activeView"
+      :default-sorting="defaultSorting"
       @refresh="$emit('refresh')"
     />
   </section>

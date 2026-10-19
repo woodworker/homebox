@@ -19,7 +19,7 @@
   import MdiArrowUp from "~icons/mdi/arrow-up";
   import Checkbox from "~/components/ui/checkbox/Checkbox.vue";
   import Label from "~/components/ui/label/Label.vue";
-  import type { EntitySummary } from "~/lib/api/types/data-contracts";
+  import type { EntitySummary, EntityViewOut } from "~/lib/api/types/data-contracts";
 
   import TableView from "./table-view.vue";
   import CardView from "./card-view.vue";
@@ -34,6 +34,9 @@
     view: "table" | "card";
     locationFlatTree?: FlatTreeItem[];
     externalPagination?: Pagination;
+    // A table view; when set it decides which columns are shown and in which order.
+    entityView?: EntityViewOut | null;
+    defaultSorting?: SortingState;
   }>();
 
   defineEmits<{
@@ -56,7 +59,13 @@
         }))
   );
 
-  const sorting = ref<SortingState>([]);
+  const sorting = ref<SortingState>(props.defaultSorting ?? []);
+  watch(
+    () => props.entityView?.id,
+    () => {
+      sorting.value = props.defaultSorting ?? [];
+    }
+  );
   const columnOrder = ref<string[]>([
     "select",
     ...(tableHeaders.value ? tableHeaders.value.map(h => h.value) : []),
@@ -65,6 +74,9 @@
   const columnVisibility = ref<VisibilityState>(
     tableHeaders.value?.reduce((acc, h) => ({ ...acc, [h.value]: h.enabled }), {})
   );
+  // A table view brings its own column set, so every column it defines is
+  // visible and ordered as in the view; the header preferences don't apply.
+  const viewColumnOrder = computed(() => (props.entityView ? props.columns.map(c => c.id!) : null));
   const rowSelection = ref({});
   const expanded = ref<ExpandedState>({});
   const pagination = ref({
@@ -106,7 +118,7 @@
         return sorting.value;
       },
       get columnVisibility() {
-        return columnVisibility.value;
+        return props.entityView ? {} : columnVisibility.value;
       },
       get rowSelection() {
         return rowSelection.value;
@@ -115,7 +127,7 @@
         return expanded.value;
       },
       get columnOrder() {
-        return columnOrder.value;
+        return viewColumnOrder.value ?? columnOrder.value;
       },
       get pagination() {
         return pagination.value;
@@ -181,7 +193,10 @@
         <div class="flex flex-col gap-4">
           <div v-if="props.view === 'table'" class="flex flex-col gap-2">
             <div>{{ $t("components.item.view.table.headers") }}</div>
-            <div class="flex flex-col">
+            <p v-if="entityView" class="text-sm text-muted-foreground">
+              {{ $t("components.item.view.table.columns_from_view", { name: entityView.name }) }}
+            </p>
+            <div v-else class="flex flex-col">
               <div
                 v-for="(colId, i) in columnOrder.slice(1, columnOrder.length - 1)"
                 :key="colId"

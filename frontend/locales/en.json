@@ -40,7 +40,8 @@
             "members": "Members",
             "notifiers": "Notifiers",
             "settings": "Settings",
-            "tools": "Tools"
+            "tools": "Tools",
+            "views": "Views"
         },
         "uses": "Uses"
     },
@@ -288,14 +289,21 @@
                 },
                 "selectable": {
                     "card": "Card",
+                    "create_view": "Create a view…",
                     "items": "Items",
+                    "manage_views": "Manage views…",
                     "no_items": "No Items to Display",
+                    "no_views_found": "No view found",
+                    "no_views_yet": "No views yet. A view picks the columns of item tables.",
+                    "search_views": "Search views…",
                     "select_all": "Select All",
                     "select_card": "Select Card",
                     "select_row": "Select Row",
-                    "table": "Table"
+                    "table": "Table",
+                    "views": "Views"
                 },
                 "table": {
+                    "columns_from_view": "Columns are defined by the view \"{name}\".",
                     "dropdown": {
                         "actions": "Actions",
                         "change_location": "Change Location",
@@ -432,6 +440,43 @@
                 "updated": "Template updated"
             },
             "using_template": "Using template: {name}"
+        },
+        "views": {
+            "confirm": {
+                "delete": "Delete the view \"{name}\"?"
+            },
+            "dialog": {
+                "add_builtin": "Add column…",
+                "add_field": "Add field",
+                "add_field_placeholder": "Custom field name",
+                "add_from_template": "Add fields from template…",
+                "ascending": "Ascending",
+                "columns": "Columns",
+                "custom_field": "Custom field",
+                "descending": "Descending",
+                "name": "Name",
+                "no_columns": "No columns yet.",
+                "no_sort": "None",
+                "sort": "Default sort",
+                "title_create": "Create View",
+                "title_edit": "Edit View"
+            },
+            "kind": {
+                "table": "Table"
+            },
+            "page": {
+                "create": "Create View",
+                "empty": "No views yet. A table view picks the columns of item tables, including custom fields."
+            },
+            "toasts": {
+                "columns_required": "A view needs at least one column",
+                "delete_failed": "Failed to delete view",
+                "delete_success": "View deleted",
+                "name_required": "Name is required",
+                "save_failed": "Failed to save view",
+                "save_success": "View saved",
+                "template_failed": "Failed to load template"
+            }
         }
     },
     "errors": {

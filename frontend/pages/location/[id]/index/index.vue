@@ -201,6 +201,7 @@
 
       const resp = await api.items.getAll({
         parentIds: [locationId.value],
+        includeFields: true,
       });
 
       if (resp.error) {

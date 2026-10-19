@@ -68,9 +68,7 @@
     const header = enabledColumns.map(formatValueAsCsvField).join(",");
 
     // map each item to a row matching enabled columns order, escaping each field
-    const rows = items.map(item =>
-      enabledColumns.map(col => formatValueAsCsvField(item.original[col as keyof EntitySummary])).join(",")
-    );
+    const rows = items.map(item => enabledColumns.map(col => formatValueAsCsvField(item.getValue(col))).join(","));
 
     const csv = [header, ...rows].join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -91,7 +89,7 @@
     const data = items.map(item => {
       const obj: Record<string, unknown> = {};
       enabledColumns.forEach(col => {
-        obj[col] = item.original[col as keyof EntitySummary] ?? null;
+        obj[col] = item.getValue(col) ?? null;
       });
       return obj;
     });
